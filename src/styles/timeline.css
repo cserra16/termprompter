@@ -1,0 +1,154 @@
+/* ===== Timeline Bar ===== */
+.timeline-bar {
+    height: var(--timeline-height);
+    background: linear-gradient(180deg, var(--bg-secondary) 0%, var(--bg-primary) 100%);
+    border-top: 1px solid var(--border-color);
+    padding: var(--spacing-md) var(--spacing-lg);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.timeline-container {
+    display: flex;
+    align-items: center;
+    gap: 0;
+    max-width: 100%;
+    overflow-x: auto;
+    padding: var(--spacing-xs) 0;
+}
+
+/* ===== Timeline Point ===== */
+.timeline-point {
+    display: flex;
+    align-items: center;
+    cursor: pointer;
+    position: relative;
+}
+
+.timeline-dot {
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    background: var(--bg-tertiary);
+    border: 2px solid var(--text-muted);
+    transition: all var(--transition-normal);
+    position: relative;
+    z-index: 2;
+    flex-shrink: 0;
+}
+
+.timeline-dot:hover {
+    transform: scale(1.2);
+    border-color: var(--accent-secondary);
+}
+
+/* Timeline States */
+.timeline-point.completed .timeline-dot {
+    background: var(--accent-success);
+    border-color: var(--accent-success);
+}
+
+.timeline-point.active .timeline-dot {
+    background: var(--accent-primary);
+    border-color: var(--accent-primary);
+    box-shadow: 0 0 12px rgba(233, 69, 96, 0.5);
+    animation: pulse 2s infinite;
+}
+
+.timeline-point.pending .timeline-dot {
+    background: var(--bg-tertiary);
+    border-color: var(--text-muted);
+}
+
+/* Pulse Animation */
+@keyframes pulse {
+    0% {
+        box-shadow: 0 0 0 0 rgba(233, 69, 96, 0.5);
+    }
+
+    70% {
+        box-shadow: 0 0 0 8px rgba(233, 69, 96, 0);
+    }
+
+    100% {
+        box-shadow: 0 0 0 0 rgba(233, 69, 96, 0);
+    }
+}
+
+/* ===== Timeline Connector ===== */
+.timeline-connector {
+    width: 32px;
+    height: 3px;
+    background: var(--text-muted);
+    transition: background var(--transition-normal);
+    flex-shrink: 0;
+}
+
+.timeline-point.completed+.timeline-point .timeline-connector-before,
+.timeline-connector.completed {
+    background: var(--accent-success);
+}
+
+/* Alternative: Connector as pseudo-element */
+.timeline-point:not(:first-child)::before {
+    content: '';
+    width: 32px;
+    height: 3px;
+    background: var(--text-muted);
+    transition: background var(--transition-normal);
+    flex-shrink: 0;
+}
+
+.timeline-point.completed:not(:first-child)::before {
+    background: var(--accent-success);
+}
+
+.timeline-point.active:not(:first-child)::before {
+    background: linear-gradient(90deg, var(--accent-success) 0%, var(--accent-primary) 100%);
+}
+
+/* ===== Step Label (Optional) ===== */
+.timeline-label {
+    position: absolute;
+    top: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 10px;
+    color: var(--text-muted);
+    white-space: nowrap;
+    opacity: 0;
+    transition: opacity var(--transition-fast);
+}
+
+.timeline-point:hover .timeline-label {
+    opacity: 1;
+}
+
+.timeline-point.active .timeline-label {
+    opacity: 1;
+    color: var(--accent-primary);
+    font-weight: 600;
+}
+
+/* ===== Responsive adjustments ===== */
+@media (max-width: 400px) {
+    .timeline-point:not(:first-child)::before {
+        width: 20px;
+    }
+
+    .timeline-dot {
+        width: 12px;
+        height: 12px;
+    }
+}
+
+/* Many steps - compact mode */
+.timeline-container.compact .timeline-dot {
+    width: 10px;
+    height: 10px;
+}
+
+.timeline-container.compact .timeline-point:not(:first-child)::before {
+    width: 16px;
+}

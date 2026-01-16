@@ -1,0 +1,19 @@
+{
+  "name": "termprompter",
+  "version": "1.0.0",
+  "description": "Herramienta didáctica para demostraciones de terminal",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron .",
+    "dev": "electron . --dev"
+  },
+  "keywords": ["electron", "terminal", "demo", "presentation"],
+  "author": "Carlos",
+  "license": "MIT",
+  "devDependencies": {
+    "electron": "^28.0.0"
+  },
+  "dependencies": {
+    "marked": "^11.0.0"
+  }
+}
