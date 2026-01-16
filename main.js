@@ -63,13 +63,48 @@ function createPty() {
   const shell = getShell();
   const homeDir = os.homedir();
 
-  ptyProcess = pty.spawn(shell, [], {
+  // Determine shell arguments for minimal prompt
+  let shellArgs = [];
+
+  if (shell.includes('zsh')) {
+    // For zsh: start interactive shell, then set prompt
+    shellArgs = ['-i'];
+  } else if (shell.includes('bash')) {
+    // For bash: use --norc to skip .bashrc, set PS1 via --init-file or argument
+    shellArgs = ['--norc', '--noprofile'];
+  }
+
+  // Create environment with minimal prompt settings
+  const minimalEnv = {
+    ...process.env,
+    // Minimal prompt for bash
+    PS1: '\\[\\033[32m\\]$\\[\\033[0m\\] ',
+    // Minimal prompt for zsh (green $ )
+    PROMPT: '%F{green}$%f ',
+    // Disable right prompt in zsh
+    RPROMPT: '',
+    RPS1: '',
+    // Ensure colors work
+    TERM: 'xterm-256color',
+    CLICOLOR: '1',
+  };
+
+  ptyProcess = pty.spawn(shell, shellArgs, {
     name: 'xterm-256color',
     cols: 80,
     rows: 24,
     cwd: homeDir,
-    env: process.env
+    env: minimalEnv
   });
+
+  // For zsh, send command to override prompt after shell starts
+  if (shell.includes('zsh')) {
+    setTimeout(() => {
+      if (ptyProcess) {
+        ptyProcess.write('PROMPT="%F{green}$%f " && RPROMPT="" && clear\n');
+      }
+    }, 100);
+  }
 
   // Forward PTY output to renderer
   ptyProcess.onData((data) => {

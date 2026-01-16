@@ -1,6 +1,7 @@
 /**
  * Terminal Component for TermPrompter
  * Integrates xterm.js with node-pty backend
+ * Note: xterm and xterm-addon-fit are loaded via script tags in index.html
  */
 
 class TerminalComponent {
@@ -15,10 +16,7 @@ class TerminalComponent {
      * Initialize the terminal
      */
     async init() {
-        // Dynamic import of xterm modules
-        const { Terminal } = require('xterm');
-        const { FitAddon } = require('xterm-addon-fit');
-
+        // Terminal and FitAddon are loaded globally from script tags
         this.terminal = new Terminal({
             theme: {
                 background: '#0d0d0d',
@@ -52,7 +50,7 @@ class TerminalComponent {
             allowTransparency: true
         });
 
-        this.fitAddon = new FitAddon();
+        this.fitAddon = new FitAddon.FitAddon();
         this.terminal.loadAddon(this.fitAddon);
 
         // Mount terminal to container
@@ -134,9 +132,4 @@ class TerminalComponent {
             this.terminal.focus();
         }
     }
-}
-
-// Export for use in other modules
-if (typeof module !== 'undefined' && module.exports) {
-    module.exports = TerminalComponent;
 }
