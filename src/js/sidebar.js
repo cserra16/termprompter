@@ -9,6 +9,7 @@ class Sidebar {
         this.steps = [];
         this.currentStepIndex = 0;
         this.onStepChange = null;
+        this.onInsertCommand = null; // Callback for inserting command to terminal
     }
 
     /**
@@ -50,12 +51,19 @@ class Sidebar {
           <span class="step-number">${step.stepNumber}</span>
           <span class="step-title">${this.escapeHtml(step.title)}</span>
         </div>
-        <button class="copy-btn" title="Copiar comando" data-command="${this.escapeHtml(step.command)}">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <rect x="9" y="9" width="13" height="13" rx="2" ry="2"/>
-            <path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/>
-          </svg>
-        </button>
+        <div class="card-actions">
+          <button class="insert-btn" title="Insertar en terminal" data-command="${this.escapeHtml(step.command)}">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M5 12h14M12 5l7 7-7 7"/>
+            </svg>
+          </button>
+          <button class="copy-btn" title="Copiar comando" data-command="${this.escapeHtml(step.command)}">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <rect x="9" y="9" width="13" height="13" rx="2" ry="2"/>
+              <path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/>
+            </svg>
+          </button>
+        </div>
       </div>
       <div class="card-command">
         <div class="command-line">
@@ -72,8 +80,8 @@ class Sidebar {
 
         // Click handler for card
         card.addEventListener('click', (e) => {
-            // Don't trigger if clicking copy button
-            if (e.target.closest('.copy-btn')) return;
+            // Don't trigger if clicking buttons
+            if (e.target.closest('.copy-btn') || e.target.closest('.insert-btn')) return;
             this.setActiveStep(index);
         });
 
@@ -82,6 +90,26 @@ class Sidebar {
         copyBtn.addEventListener('click', (e) => {
             e.stopPropagation();
             this.copyCommand(step.command, copyBtn);
+        });
+
+        // Insert button handler
+        const insertBtn = card.querySelector('.insert-btn');
+        insertBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            if (this.onInsertCommand) {
+                this.onInsertCommand(step.command);
+                insertBtn.classList.add('inserted');
+                setTimeout(() => insertBtn.classList.remove('inserted'), 500);
+            }
+        });
+
+        // Double-click on command to insert
+        const commandSection = card.querySelector('.card-command');
+        commandSection.addEventListener('dblclick', (e) => {
+            e.stopPropagation();
+            if (this.onInsertCommand) {
+                this.onInsertCommand(step.command);
+            }
         });
 
         return card;

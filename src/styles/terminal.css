@@ -1,0 +1,136 @@
+/* ===== Terminal Styles ===== */
+
+.terminal-header {
+    height: 36px;
+    background: linear-gradient(135deg, var(--bg-tertiary) 0%, var(--bg-secondary) 100%);
+    border-bottom: 1px solid var(--border-color);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 var(--spacing-md);
+}
+
+.terminal-title {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.terminal-controls {
+    display: flex;
+    gap: var(--spacing-xs);
+}
+
+.terminal-btn {
+    width: 26px;
+    height: 26px;
+    border: none;
+    border-radius: var(--radius-sm);
+    background: transparent;
+    color: var(--text-muted);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all var(--transition-fast);
+}
+
+.terminal-btn:hover {
+    background: var(--bg-card);
+    color: var(--text-primary);
+}
+
+.terminal-container {
+    flex: 1;
+    background: #000000;
+    padding: var(--spacing-sm);
+    overflow: hidden;
+}
+
+/* xterm.js overrides */
+.terminal-container .xterm {
+    height: 100%;
+    padding: var(--spacing-xs);
+}
+
+.terminal-container .xterm-viewport {
+    background: transparent !important;
+}
+
+.terminal-container .xterm-screen {
+    height: 100%;
+}
+
+/* ===== Split Layout ===== */
+.main-content {
+    flex: 1;
+    display: flex;
+    overflow: hidden;
+}
+
+.left-panel {
+    width: 35%;
+    min-width: 300px;
+    max-width: 450px;
+    display: flex;
+    flex-direction: column;
+    border-right: 1px solid var(--border-color);
+    background: var(--bg-primary);
+}
+
+.right-panel {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    background: #0d0d0d;
+}
+
+/* Adjust sidebar to fill remaining space */
+.left-panel .sidebar {
+    flex: 1;
+    overflow-y: auto;
+}
+
+/* Adjust demo header in left panel */
+.left-panel .demo-header {
+    flex-shrink: 0;
+}
+
+/* ===== Resizer (optional, for future) ===== */
+.panel-resizer {
+    width: 4px;
+    background: var(--border-color);
+    cursor: col-resize;
+    transition: background var(--transition-fast);
+}
+
+.panel-resizer:hover {
+    background: var(--accent-primary);
+}
+
+/* ===== Command insertion indicator ===== */
+.command-card .insert-btn {
+    background: transparent;
+    border: none;
+    color: var(--text-muted);
+    cursor: pointer;
+    padding: var(--spacing-xs);
+    border-radius: var(--radius-sm);
+    transition: all var(--transition-fast);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-left: var(--spacing-xs);
+}
+
+.command-card .insert-btn:hover {
+    background: var(--accent-primary);
+    color: white;
+}
+
+.command-card .insert-btn svg {
+    width: 14px;
+    height: 14px;
+}

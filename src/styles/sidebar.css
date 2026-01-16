@@ -110,6 +110,34 @@
     color: var(--accent-success);
 }
 
+.card-actions {
+    display: flex;
+    gap: var(--spacing-xs);
+}
+
+.insert-btn {
+    background: transparent;
+    border: none;
+    color: var(--text-muted);
+    cursor: pointer;
+    padding: var(--spacing-xs);
+    border-radius: var(--radius-sm);
+    transition: all var(--transition-fast);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.insert-btn:hover {
+    background: var(--accent-primary);
+    color: white;
+}
+
+.insert-btn.inserted {
+    background: var(--accent-success);
+    color: white;
+}
+
 /* Card Command Section */
 .card-command {
     padding: var(--spacing-md);

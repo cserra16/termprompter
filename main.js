@@ -1,23 +1,34 @@
 const { app, BrowserWindow, ipcMain, dialog } = require('electron');
 const path = require('path');
 const fs = require('fs');
+const os = require('os');
+const pty = require('node-pty');
 
 let mainWindow;
+let ptyProcess = null;
+
+// Determine shell based on platform
+function getShell() {
+  if (process.platform === 'win32') {
+    return process.env.COMSPEC || 'cmd.exe';
+  }
+  return process.env.SHELL || '/bin/bash';
+}
 
 function createWindow() {
   const { screen } = require('electron');
   const primaryDisplay = screen.getPrimaryDisplay();
   const { width, height } = primaryDisplay.workAreaSize;
 
-  // Window takes ~35% width on the left side
-  const windowWidth = Math.floor(width * 0.35);
-  const windowHeight = height;
+  // Window now takes full width for sidebar + terminal
+  const windowWidth = Math.floor(width * 0.9);
+  const windowHeight = Math.floor(height * 0.9);
 
   mainWindow = new BrowserWindow({
     width: windowWidth,
     height: windowHeight,
-    x: 0,
-    y: 0,
+    x: Math.floor((width - windowWidth) / 2),
+    y: Math.floor((height - windowHeight) / 2),
     frame: false,
     transparent: false,
     backgroundColor: '#1a1a2e',
@@ -36,18 +47,52 @@ function createWindow() {
   if (process.argv.includes('--dev')) {
     mainWindow.webContents.openDevTools({ mode: 'detach' });
   }
+
+  // Create PTY process
+  createPty();
+
+  mainWindow.on('closed', () => {
+    if (ptyProcess) {
+      ptyProcess.kill();
+      ptyProcess = null;
+    }
+  });
+}
+
+function createPty() {
+  const shell = getShell();
+  const homeDir = os.homedir();
+
+  ptyProcess = pty.spawn(shell, [], {
+    name: 'xterm-256color',
+    cols: 80,
+    rows: 24,
+    cwd: homeDir,
+    env: process.env
+  });
+
+  // Forward PTY output to renderer
+  ptyProcess.onData((data) => {
+    if (mainWindow && !mainWindow.isDestroyed()) {
+      mainWindow.webContents.send('terminal-data', data);
+    }
+  });
+
+  ptyProcess.onExit(({ exitCode }) => {
+    console.log(`PTY exited with code ${exitCode}`);
+  });
 }
 
 // IPC Handlers
 ipcMain.handle('load-demo', async (event, filePath) => {
   try {
     let demoPath = filePath;
-    
+
     // If no path provided, use default demo
     if (!demoPath) {
       demoPath = path.join(__dirname, 'demos', 'example-demo.md');
     }
-    
+
     const content = fs.readFileSync(demoPath, 'utf-8');
     return { success: true, content, filePath: demoPath };
   } catch (error) {
@@ -72,6 +117,26 @@ ipcMain.handle('open-demo-dialog', async () => {
   return { success: false, canceled: true };
 });
 
+// Terminal IPC
+ipcMain.on('terminal-input', (event, data) => {
+  if (ptyProcess) {
+    ptyProcess.write(data);
+  }
+});
+
+ipcMain.on('terminal-resize', (event, { cols, rows }) => {
+  if (ptyProcess) {
+    ptyProcess.resize(cols, rows);
+  }
+});
+
+ipcMain.on('terminal-write-command', (event, command) => {
+  if (ptyProcess) {
+    // Write command to terminal (user can press Enter to execute)
+    ptyProcess.write(command);
+  }
+});
+
 ipcMain.on('close-window', () => {
   mainWindow.close();
 });
@@ -91,6 +156,9 @@ app.whenReady().then(() => {
 });
 
 app.on('window-all-closed', () => {
+  if (ptyProcess) {
+    ptyProcess.kill();
+  }
   if (process.platform !== 'darwin') {
     app.quit();
   }

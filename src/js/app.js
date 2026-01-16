@@ -7,6 +7,7 @@ class TermPrompterApp {
     constructor() {
         this.sidebar = new Sidebar('#cardsContainer');
         this.timeline = new Timeline('#timelineContainer');
+        this.terminal = new TerminalComponent('#terminalContainer');
         this.demoTitle = document.getElementById('demoTitle');
         this.currentDemo = null;
 
@@ -16,7 +17,8 @@ class TermPrompterApp {
     /**
      * Initialize the application
      */
-    init() {
+    async init() {
+        await this.terminal.init();
         this.setupEventListeners();
         this.setupKeyboardNavigation();
         this.connectComponents();
@@ -42,6 +44,14 @@ class TermPrompterApp {
         minimizeBtn.addEventListener('click', () => {
             window.electronAPI.minimizeWindow();
         });
+
+        // Clear terminal button
+        const clearTerminalBtn = document.getElementById('clearTerminalBtn');
+        if (clearTerminalBtn) {
+            clearTerminalBtn.addEventListener('click', () => {
+                this.terminal.clear();
+            });
+        }
     }
 
     /**
@@ -49,10 +59,26 @@ class TermPrompterApp {
      */
     setupKeyboardNavigation() {
         document.addEventListener('keydown', (e) => {
+            // Only handle navigation if not typing in terminal
+            const isTerminalFocused = document.activeElement?.closest('.terminal-container');
+
+            // Use Page Up/Down for navigation even when terminal is focused
+            if (e.key === 'PageDown') {
+                e.preventDefault();
+                this.sidebar.nextStep();
+                return;
+            }
+            if (e.key === 'PageUp') {
+                e.preventDefault();
+                this.sidebar.previousStep();
+                return;
+            }
+
+            // Skip other shortcuts if terminal is focused
+            if (isTerminalFocused) return;
+
             switch (e.key) {
                 case 'ArrowDown':
-                case 'Enter':
-                case ' ':
                     e.preventDefault();
                     this.sidebar.nextStep();
                     break;
@@ -67,14 +93,6 @@ class TermPrompterApp {
                 case 'End':
                     e.preventDefault();
                     this.sidebar.lastStep();
-                    break;
-                case 'ArrowRight':
-                    e.preventDefault();
-                    this.sidebar.nextStep();
-                    break;
-                case 'ArrowLeft':
-                    e.preventDefault();
-                    this.sidebar.previousStep();
                     break;
             }
         });
@@ -92,6 +110,11 @@ class TermPrompterApp {
         // When timeline point is clicked, update sidebar
         this.timeline.onPointClick = (index) => {
             this.sidebar.setActiveStep(index);
+        };
+
+        // When insert button is clicked, write command to terminal
+        this.sidebar.onInsertCommand = (command) => {
+            this.terminal.writeCommand(command, false);
         };
     }
 
