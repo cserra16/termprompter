@@ -56,6 +56,21 @@ class TermPrompterApp {
                 this.terminal.clear();
             });
         }
+
+        // Font size controls
+        const increaseFontBtn = document.getElementById('increaseFontBtn');
+        if (increaseFontBtn) {
+            increaseFontBtn.addEventListener('click', () => {
+                this.terminal.increaseFontSize();
+            });
+        }
+
+        const decreaseFontBtn = document.getElementById('decreaseFontBtn');
+        if (decreaseFontBtn) {
+            decreaseFontBtn.addEventListener('click', () => {
+                this.terminal.decreaseFontSize();
+            });
+        }
     }
 
     /**

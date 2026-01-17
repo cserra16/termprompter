@@ -132,4 +132,24 @@ class TerminalComponent {
             this.terminal.focus();
         }
     }
+
+    /**
+     * Increase font size
+     */
+    increaseFontSize() {
+        if (this.terminal && this.terminal.options.fontSize < 32) {
+            this.terminal.options.fontSize += 1;
+            this.fit();
+        }
+    }
+
+    /**
+     * Decrease font size
+     */
+    decreaseFontSize() {
+        if (this.terminal && this.terminal.options.fontSize > 8) {
+            this.terminal.options.fontSize -= 1;
+            this.fit();
+        }
+    }
 }
