@@ -2,12 +2,14 @@
 
 .terminal-header {
     height: 36px;
+    min-height: 36px;
     background: linear-gradient(135deg, var(--bg-tertiary) 0%, var(--bg-secondary) 100%);
     border-bottom: 1px solid var(--border-color);
     display: flex;
     align-items: center;
-    justify-content: space-between;
+    justify-content: flex-start;
     padding: 0 var(--spacing-md);
+    overflow: visible;
 }
 
 .terminal-title {
@@ -16,6 +18,11 @@
     color: var(--text-secondary);
     text-transform: uppercase;
     letter-spacing: 0.5px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    flex-shrink: 1;
+    min-width: 0;
 }
 
 .terminal-controls {
@@ -26,6 +33,7 @@
     flex-wrap: nowrap;
     /* Prevent wrapping */
     align-items: center;
+    min-width: fit-content;
 }
 
 .terminal-btn {
