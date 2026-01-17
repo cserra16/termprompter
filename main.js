@@ -142,6 +142,7 @@ ipcMain.handle('load-demo', async (event, filePath) => {
 
 ipcMain.handle('open-demo-dialog', async () => {
   const result = await dialog.showOpenDialog(mainWindow, {
+    defaultPath: path.join(__dirname, 'library'),
     properties: ['openFile'],
     filters: [
       { name: 'Markdown', extensions: ['md'] }
