@@ -167,6 +167,23 @@ ipcMain.handle('save-demo', async (event, filePath, content) => {
   }
 });
 
+ipcMain.handle('save-to-library', async (event, filename, content) => {
+  try {
+    const libraryPath = path.join(__dirname, 'library');
+
+    // Create library directory if it doesn't exist
+    if (!fs.existsSync(libraryPath)) {
+      fs.mkdirSync(libraryPath, { recursive: true });
+    }
+
+    const filePath = path.join(libraryPath, filename);
+    fs.writeFileSync(filePath, content, 'utf-8');
+    return { success: true, filePath };
+  } catch (error) {
+    return { success: false, error: error.message };
+  }
+});
+
 // Terminal IPC
 ipcMain.on('terminal-input', (event, data) => {
   if (ptyProcess) {

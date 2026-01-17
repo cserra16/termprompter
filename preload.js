@@ -10,6 +10,9 @@ contextBridge.exposeInMainWorld('electronAPI', {
     // Save demo file
     saveDemo: (filePath, content) => ipcRenderer.invoke('save-demo', filePath, content),
 
+    // Save to library (AI-generated demos)
+    saveToLibrary: (filename, content) => ipcRenderer.invoke('save-to-library', filename, content),
+
     // Window controls
     closeWindow: () => ipcRenderer.send('close-window'),
     minimizeWindow: () => ipcRenderer.send('minimize-window'),
