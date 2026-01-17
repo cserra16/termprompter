@@ -217,3 +217,126 @@
     color: var(--text-secondary);
     max-width: 280px;
 }
+
+/* ===== Edit Mode ===== */
+.command-card.editable {
+    cursor: move;
+}
+
+.command-card.dragging {
+    opacity: 0.5;
+}
+
+.command-card.drag-over {
+    border-color: var(--accent-primary);
+    border-style: dashed;
+}
+
+.drag-handle {
+    display: none;
+    cursor: move;
+    color: var(--text-muted);
+    padding: var(--spacing-xs);
+    margin-right: var(--spacing-xs);
+}
+
+.edit-mode .drag-handle {
+    display: flex;
+    align-items: center;
+}
+
+.drag-handle:hover {
+    color: var(--accent-primary);
+}
+
+.delete-btn {
+    background: transparent;
+    border: none;
+    color: var(--text-muted);
+    cursor: pointer;
+    padding: var(--spacing-xs);
+    border-radius: var(--radius-sm);
+    transition: all var(--transition-fast);
+    display: none;
+    align-items: center;
+    justify-content: center;
+}
+
+.edit-mode .delete-btn {
+    display: flex;
+}
+
+.delete-btn:hover {
+    background: var(--accent-danger);
+    color: white;
+}
+
+.step-divider {
+    display: none;
+    position: relative;
+    height: 8px;
+    margin: 0 var(--spacing-md);
+}
+
+.edit-mode .step-divider {
+    display: block;
+}
+
+.step-divider::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 50%;
+    height: 1px;
+    background: transparent;
+    transition: background var(--transition-fast);
+}
+
+.step-divider:hover::before {
+    background: var(--accent-primary);
+}
+
+.add-step-btn {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%) scale(0);
+    background: var(--accent-primary);
+    border: none;
+    color: white;
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all var(--transition-fast);
+    z-index: 10;
+}
+
+.step-divider:hover .add-step-btn {
+    transform: translate(-50%, -50%) scale(1);
+}
+
+.add-step-btn:hover {
+    background: var(--accent-secondary);
+    transform: translate(-50%, -50%) scale(1.1);
+}
+
+.editable-field {
+    outline: none;
+    padding: 2px 4px;
+    border-radius: var(--radius-sm);
+    transition: background var(--transition-fast);
+}
+
+.editable-field:focus {
+    background: rgba(233, 69, 96, 0.1);
+    border: 1px solid var(--accent-primary);
+}
+
+.editable-field:hover {
+    background: rgba(255, 255, 255, 0.05);
+}

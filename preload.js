@@ -7,6 +7,9 @@ contextBridge.exposeInMainWorld('electronAPI', {
     // Open file dialog to select a demo
     openDemoDialog: () => ipcRenderer.invoke('open-demo-dialog'),
 
+    // Save demo file
+    saveDemo: (filePath, content) => ipcRenderer.invoke('save-demo', filePath, content),
+
     // Window controls
     closeWindow: () => ipcRenderer.send('close-window'),
     minimizeWindow: () => ipcRenderer.send('minimize-window'),

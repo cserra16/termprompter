@@ -10,6 +10,11 @@ class Sidebar {
         this.currentStepIndex = 0;
         this.onStepChange = null;
         this.onInsertCommand = null; // Callback for inserting command to terminal
+        this.editModeEnabled = false;
+        this.onStepsReordered = null;
+        this.onStepAdded = null;
+        this.onStepEdited = null;
+        this.draggedElement = null;
     }
 
     /**
@@ -254,6 +259,252 @@ class Sidebar {
      */
     getTotalSteps() {
         return this.steps.length;
+    }
+
+    /**
+     * Enable edit mode
+     */
+    enableEditMode(onStepsReordered, onStepAdded, onStepEdited) {
+        this.editModeEnabled = true;
+        this.onStepsReordered = onStepsReordered;
+        this.onStepAdded = onStepAdded;
+        this.onStepEdited = onStepEdited;
+        this.setupEditMode();
+    }
+
+    /**
+     * Disable edit mode
+     */
+    disableEditMode() {
+        this.editModeEnabled = false;
+        this.cleanupEditMode();
+        this.render(this.steps);
+    }
+
+    /**
+     * Setup edit mode UI
+     */
+    setupEditMode() {
+        const cards = this.container.querySelectorAll('.command-card');
+
+        cards.forEach((card, index) => {
+            // Make cards draggable
+            card.setAttribute('draggable', 'true');
+            card.classList.add('editable');
+
+            // Add drag handle
+            const header = card.querySelector('.card-header');
+            const dragHandle = document.createElement('div');
+            dragHandle.className = 'drag-handle';
+            dragHandle.innerHTML = `
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
+                    <circle cx="9" cy="5" r="2"/>
+                    <circle cx="9" cy="12" r="2"/>
+                    <circle cx="9" cy="19" r="2"/>
+                    <circle cx="15" cy="5" r="2"/>
+                    <circle cx="15" cy="12" r="2"/>
+                    <circle cx="15" cy="19" r="2"/>
+                </svg>
+            `;
+            header.insertBefore(dragHandle, header.firstChild);
+
+            // Add delete button
+            const deleteBtn = document.createElement('button');
+            deleteBtn.className = 'delete-btn';
+            deleteBtn.title = 'Eliminar paso';
+            deleteBtn.innerHTML = `
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M3 6h18M8 6V4a2 2 0 012-2h4a2 2 0 012 2v2m3 0v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6h14z"/>
+                </svg>
+            `;
+            deleteBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                this.deleteStep(index);
+            });
+            card.querySelector('.card-actions').appendChild(deleteBtn);
+
+            // Drag events
+            card.addEventListener('dragstart', (e) => this.handleDragStart(e, index));
+            card.addEventListener('dragend', (e) => this.handleDragEnd(e));
+            card.addEventListener('dragover', (e) => this.handleDragOver(e));
+            card.addEventListener('drop', (e) => this.handleDrop(e, index));
+
+            // Make command and notes editable
+            this.makeCommandEditable(card, index);
+            this.makeNotesEditable(card, index);
+
+            // Add insert step divider after each card
+            if (index < cards.length || true) {
+                const divider = document.createElement('div');
+                divider.className = 'step-divider';
+                divider.innerHTML = `
+                    <button class="add-step-btn" title="Añadir paso">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M12 5v14M5 12h14"/>
+                        </svg>
+                    </button>
+                `;
+                divider.querySelector('.add-step-btn').addEventListener('click', () => {
+                    if (this.onStepAdded) {
+                        this.onStepAdded(index + 1);
+                    }
+                });
+                card.after(divider);
+            }
+        });
+
+        // Add divider at the beginning
+        if (cards.length > 0) {
+            const firstDivider = document.createElement('div');
+            firstDivider.className = 'step-divider';
+            firstDivider.innerHTML = `
+                <button class="add-step-btn" title="Añadir paso">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M12 5v14M5 12h14"/>
+                    </svg>
+                </button>
+            `;
+            firstDivider.querySelector('.add-step-btn').addEventListener('click', () => {
+                if (this.onStepAdded) {
+                    this.onStepAdded(0);
+                }
+            });
+            this.container.insertBefore(firstDivider, cards[0]);
+        }
+    }
+
+    /**
+     * Cleanup edit mode UI
+     */
+    cleanupEditMode() {
+        const cards = this.container.querySelectorAll('.command-card');
+        cards.forEach(card => {
+            card.removeAttribute('draggable');
+            card.classList.remove('editable', 'dragging');
+        });
+
+        // Remove dividers
+        const dividers = this.container.querySelectorAll('.step-divider');
+        dividers.forEach(d => d.remove());
+    }
+
+    /**
+     * Make command editable
+     */
+    makeCommandEditable(card, index) {
+        const commandText = card.querySelector('.command-text');
+        commandText.contentEditable = 'true';
+        commandText.classList.add('editable-field');
+
+        commandText.addEventListener('blur', () => {
+            const newValue = commandText.textContent.trim();
+            if (newValue !== this.steps[index].command) {
+                this.steps[index].command = newValue;
+                if (this.onStepEdited) {
+                    this.onStepEdited(index, 'command', newValue);
+                }
+            }
+        });
+
+        commandText.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                commandText.blur();
+            }
+        });
+    }
+
+    /**
+     * Make notes editable
+     */
+    makeNotesEditable(card, index) {
+        const notesContent = card.querySelector('.notes-content');
+        if (!notesContent) return;
+
+        notesContent.contentEditable = 'true';
+        notesContent.classList.add('editable-field');
+
+        notesContent.addEventListener('blur', () => {
+            const newValue = notesContent.textContent.trim();
+            if (newValue !== this.steps[index].notes) {
+                this.steps[index].notes = newValue;
+                if (this.onStepEdited) {
+                    this.onStepEdited(index, 'notes', newValue);
+                }
+            }
+        });
+    }
+
+    /**
+     * Delete a step
+     */
+    deleteStep(index) {
+        if (confirm('¿Eliminar este paso?')) {
+            this.steps.splice(index, 1);
+            if (this.onStepsReordered) {
+                this.onStepsReordered(this.steps);
+            }
+            this.render(this.steps);
+            if (this.editModeEnabled) {
+                this.setupEditMode();
+            }
+        }
+    }
+
+    /**
+     * Drag and drop handlers
+     */
+    handleDragStart(e, index) {
+        this.draggedElement = e.currentTarget;
+        this.draggedIndex = index;
+        e.currentTarget.classList.add('dragging');
+        e.dataTransfer.effectAllowed = 'move';
+        e.dataTransfer.setData('text/html', e.currentTarget.innerHTML);
+    }
+
+    handleDragEnd(e) {
+        e.currentTarget.classList.remove('dragging');
+        const cards = this.container.querySelectorAll('.command-card');
+        cards.forEach(card => card.classList.remove('drag-over'));
+    }
+
+    handleDragOver(e) {
+        if (e.preventDefault) {
+            e.preventDefault();
+        }
+        e.dataTransfer.dropEffect = 'move';
+
+        const card = e.currentTarget;
+        if (card !== this.draggedElement) {
+            card.classList.add('drag-over');
+        }
+
+        return false;
+    }
+
+    handleDrop(e, dropIndex) {
+        if (e.stopPropagation) {
+            e.stopPropagation();
+        }
+
+        e.currentTarget.classList.remove('drag-over');
+
+        if (this.draggedIndex !== dropIndex) {
+            const draggedStep = this.steps[this.draggedIndex];
+            this.steps.splice(this.draggedIndex, 1);
+            this.steps.splice(dropIndex, 0, draggedStep);
+
+            if (this.onStepsReordered) {
+                this.onStepsReordered(this.steps);
+            }
+
+            this.render(this.steps);
+            if (this.editModeEnabled) {
+                this.setupEditMode();
+            }
+        }
+
+        return false;
     }
 }
 
