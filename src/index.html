@@ -34,7 +34,8 @@
                 </button>
                 <button class="control-btn ai-btn" id="aiGeneratorBtn" title="Generar demo con IA">
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z" />
+                        <path
+                            d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z" />
                     </svg>
                 </button>
                 <button class="control-btn minimize-btn" id="minimizeBtn" title="Minimizar">
@@ -157,13 +158,17 @@
                     <label for="aiModel">Modelo:</label>
                     <select id="aiModel" class="form-control">
                         <!-- OpenAI models -->
-                        <option value="gpt-4" class="openai-model">GPT-4</option>
-                        <option value="gpt-4-turbo-preview" class="openai-model">GPT-4 Turbo</option>
-                        <option value="gpt-3.5-turbo" class="openai-model">GPT-3.5 Turbo</option>
+                        <option value="gpt-5.2" class="openai-model">GPT-5.2</option>
+                        <option value="gpt-5" class="openai-model">GPT-5</option>
+                        <option value="gpt-5-mini" class="openai-model">GPT-5 Mini</option>
+                        <option value="gpt-4o" class="openai-model">GPT-4o</option>
                         <!-- Anthropic models -->
-                        <option value="claude-opus-4-5-20251101" class="anthropic-model" style="display: none;">Claude Opus 4.5</option>
-                        <option value="claude-3-5-sonnet-20241022" class="anthropic-model" style="display: none;">Claude 3.5 Sonnet</option>
-                        <option value="claude-3-haiku-20240307" class="anthropic-model" style="display: none;">Claude 3 Haiku</option>
+                        <option value="claude-opus-4-5-20251124" class="anthropic-model" style="display: none;">Claude
+                            Opus 4.5</option>
+                        <option value="claude-sonnet-4-5-20250929" class="anthropic-model" style="display: none;">Claude
+                            Sonnet 4.5</option>
+                        <option value="claude-haiku-4-5-20251015" class="anthropic-model" style="display: none;">Claude
+                            Haiku 4.5</option>
                     </select>
                 </div>
 
@@ -175,17 +180,20 @@
 
                 <div class="form-group">
                     <label for="demoTopic">Tema de la Demo:</label>
-                    <input type="text" id="demoTopic" class="form-control" placeholder="Ej: Docker básico, Git avanzado, Python...">
+                    <input type="text" id="demoTopic" class="form-control"
+                        placeholder="Ej: Docker básico, Git avanzado, Python...">
                 </div>
 
                 <div class="form-group">
                     <label for="systemPrompt">Prompt del Sistema (opcional):</label>
-                    <textarea id="systemPrompt" class="form-control" rows="3" placeholder="Instrucciones adicionales para el modelo...">Eres un experto en crear tutoriales interactivos de terminal. Genera un archivo markdown con el formato específico de TermPrompter que incluya un título descriptivo y pasos secuenciales. Cada paso debe tener: un número, un título descriptivo, un comando bash ejecutable, y notas explicativas. Los comandos deben ser prácticos y educativos.</textarea>
+                    <textarea id="systemPrompt" class="form-control" rows="3"
+                        placeholder="Instrucciones adicionales para el modelo...">Eres un experto en crear tutoriales interactivos de terminal. Genera un archivo markdown con el formato específico de TermPrompter que incluya un título descriptivo y pasos secuenciales. Cada paso debe tener: un número, un título descriptivo, un comando bash ejecutable, y notas explicativas. Los comandos deben ser prácticos y educativos.</textarea>
                 </div>
 
                 <div class="form-group">
                     <label for="userPrompt">Prompt del Usuario:</label>
-                    <textarea id="userPrompt" class="form-control" rows="4" placeholder="Describe qué quieres que incluya la demo...">Genera un tutorial de terminal sobre [TEMA] con 5-8 pasos progresivos. Cada paso debe incluir un comando bash práctico y notas explicativas. Usa el siguiente formato markdown:
+                    <textarea id="userPrompt" class="form-control" rows="4"
+                        placeholder="Describe qué quieres que incluya la demo...">Genera un tutorial de terminal sobre [TEMA] con 5-8 pasos progresivos. Cada paso debe incluir un comando bash práctico y notas explicativas. Usa el siguiente formato markdown:
 
 # Título del Tutorial
 
@@ -204,13 +212,16 @@ Notas explicativas sobre el comando</textarea>
 
                 <div class="form-group">
                     <label for="maxTokens">Máximo de tokens:</label>
-                    <input type="number" id="maxTokens" class="form-control" value="2000" min="100" max="4000" step="100">
+                    <input type="number" id="maxTokens" class="form-control" value="2000" min="100" max="4000"
+                        step="100">
                 </div>
             </div>
             <div class="modal-footer">
                 <button id="generateDemoBtn" class="btn btn-primary">
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right: 8px;">
-                        <path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z" />
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                        style="margin-right: 8px;">
+                        <path
+                            d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z" />
                     </svg>
                     Generar Demo
                 </button>

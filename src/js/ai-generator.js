@@ -8,7 +8,7 @@ class AIGenerator {
     this.provider = 'openai';
     this.config = {
       provider: 'openai',
-      model: 'gpt-4',
+      model: 'gpt-5.2',
       apiToken: '',
       temperature: 0.7,
       maxTokens: 2000
@@ -121,11 +121,11 @@ Notas explicativas sobre el comando`;
     if (provider === 'openai') {
       openaiModels.forEach(opt => opt.style.display = 'block');
       anthropicModels.forEach(opt => opt.style.display = 'none');
-      if (modelSelect) modelSelect.value = 'gpt-4';
+      if (modelSelect) modelSelect.value = 'gpt-5.2';
     } else {
       openaiModels.forEach(opt => opt.style.display = 'none');
       anthropicModels.forEach(opt => opt.style.display = 'block');
-      if (modelSelect) modelSelect.value = 'claude-3-5-sonnet-20241022';
+      if (modelSelect) modelSelect.value = 'claude-opus-4-5-20251124';
     }
   }
 
