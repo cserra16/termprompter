@@ -8,6 +8,7 @@ class TermPrompterApp {
         this.sidebar = new Sidebar('#cardsContainer');
         this.timeline = new Timeline('#timelineContainer');
         this.terminal = new TerminalComponent('#terminalContainer');
+        this.recorder = new RecorderUI();
         this.demoTitle = document.getElementById('demoTitle');
         this.currentDemo = null;
 
@@ -19,6 +20,9 @@ class TermPrompterApp {
      */
     async init() {
         await this.terminal.init();
+        // Make terminal component globally accessible for recording
+        window.terminalComponent = this.terminal;
+        this.recorder.init();
         this.setupEventListeners();
         this.setupKeyboardNavigation();
         this.connectComponents();

@@ -20,5 +20,11 @@ contextBridge.exposeInMainWorld('electronAPI', {
     },
     removeTerminalListeners: () => {
         ipcRenderer.removeAllListeners('terminal-data');
-    }
+    },
+
+    // Recording API
+    startRecording: (options) => ipcRenderer.invoke('start-recording', options),
+    stopRecording: () => ipcRenderer.invoke('stop-recording'),
+    saveRecording: (filePath) => ipcRenderer.invoke('save-recording', filePath),
+    getRecordingStats: () => ipcRenderer.invoke('get-recording-stats')
 });

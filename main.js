@@ -3,9 +3,11 @@ const path = require('path');
 const fs = require('fs');
 const os = require('os');
 const pty = require('node-pty');
+const TerminalRecorder = require('./recorder');
 
 let mainWindow;
 let ptyProcess = null;
+let recorder = new TerminalRecorder();
 
 // Determine shell based on platform
 function getShell() {
@@ -111,6 +113,9 @@ function createPty() {
     if (mainWindow && !mainWindow.isDestroyed()) {
       mainWindow.webContents.send('terminal-data', data);
     }
+
+    // Record output if recording is active
+    recorder.recordOutput(data);
   });
 
   ptyProcess.onExit(({ exitCode }) => {
@@ -156,12 +161,18 @@ ipcMain.handle('open-demo-dialog', async () => {
 ipcMain.on('terminal-input', (event, data) => {
   if (ptyProcess) {
     ptyProcess.write(data);
+
+    // Record input if recording is active
+    recorder.recordInput(data);
   }
 });
 
 ipcMain.on('terminal-resize', (event, { cols, rows }) => {
   if (ptyProcess) {
     ptyProcess.resize(cols, rows);
+
+    // Update recording dimensions if recording is active
+    recorder.updateDimensions(cols, rows);
   }
 });
 
@@ -169,6 +180,80 @@ ipcMain.on('terminal-write-command', (event, command) => {
   if (ptyProcess) {
     // Write command to terminal (user can press Enter to execute)
     ptyProcess.write(command);
+  }
+});
+
+// Recording IPC handlers
+ipcMain.handle('start-recording', async (event, options = {}) => {
+  try {
+    // Get current terminal dimensions if not provided
+    if (!options.cols || !options.rows) {
+      const dims = await mainWindow.webContents.executeJavaScript(
+        'window.terminalComponent?.fitAddon?.proposeDimensions() || {cols: 80, rows: 24}'
+      );
+      options.cols = options.cols || dims.cols;
+      options.rows = options.rows || dims.rows;
+    }
+
+    // Set environment info
+    options.env = {
+      TERM: process.env.TERM || 'xterm-256color',
+      SHELL: getShell()
+    };
+
+    const success = recorder.startRecording(options);
+    return { success, message: success ? 'Recording started' : 'Recording already in progress' };
+  } catch (error) {
+    return { success: false, error: error.message };
+  }
+});
+
+ipcMain.handle('stop-recording', async () => {
+  try {
+    const success = recorder.stopRecording();
+    const stats = recorder.getStats();
+    return { success, stats, message: success ? 'Recording stopped' : 'No recording in progress' };
+  } catch (error) {
+    return { success: false, error: error.message };
+  }
+});
+
+ipcMain.handle('save-recording', async (event, customPath = null) => {
+  try {
+    let filePath = customPath;
+
+    if (!filePath) {
+      // Show save dialog
+      const result = await dialog.showSaveDialog(mainWindow, {
+        title: 'Save Terminal Recording',
+        defaultPath: path.join(os.homedir(), 'Downloads', recorder.generateFilename()),
+        filters: [
+          { name: 'Asciinema Cast', extensions: ['cast'] },
+          { name: 'All Files', extensions: ['*'] }
+        ]
+      });
+
+      if (result.canceled) {
+        return { success: false, canceled: true };
+      }
+
+      filePath = result.filePath;
+    }
+
+    const savedPath = await recorder.saveRecording(filePath);
+    return { success: true, filePath: savedPath };
+  } catch (error) {
+    return { success: false, error: error.message };
+  }
+});
+
+ipcMain.handle('get-recording-stats', async () => {
+  try {
+    const stats = recorder.getStats();
+    const isRecording = recorder.isRecording;
+    return { success: true, stats, isRecording };
+  } catch (error) {
+    return { success: false, error: error.message };
   }
 });
 
