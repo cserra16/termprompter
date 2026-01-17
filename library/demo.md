@@ -11,3 +11,10 @@ Descripción del primer paso.
 echo "Paso 2"
 ```
 Descripción del segundo paso.
+
+## Paso 3: Nuevo paso
+```bash
+echo "Nuevo comando"
+```
+Añade aquí las notas del paso
+

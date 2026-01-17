@@ -42,7 +42,7 @@ class TerminalComponent {
                 brightWhite: '#ffffff'
             },
             fontFamily: '"Fira Code", "Cascadia Code", "JetBrains Mono", Consolas, monospace',
-            fontSize: 14,
+            fontSize: 18,
             lineHeight: 1.2,
             cursorBlink: true,
             cursorStyle: 'bar',
