@@ -14,6 +14,7 @@
   --accent-tertiary: #0f3460;
   --accent-success: #00d9a5;
   --accent-warning: #ffc107;
+  --accent-danger: #ff4757;
 
   /* Text Colors */
   --text-primary: #eaeaea;
@@ -160,6 +161,16 @@ body {
 
 .control-btn.open-btn:hover {
   background: var(--accent-success);
+  color: white;
+}
+
+.control-btn.edit-btn:hover {
+  background: var(--accent-secondary);
+  color: white;
+}
+
+.control-btn.edit-btn.active {
+  background: var(--accent-secondary);
   color: white;
 }
 

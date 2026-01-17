@@ -158,6 +158,15 @@ ipcMain.handle('open-demo-dialog', async () => {
   return { success: false, canceled: true };
 });
 
+ipcMain.handle('save-demo', async (event, filePath, content) => {
+  try {
+    fs.writeFileSync(filePath, content, 'utf-8');
+    return { success: true, filePath };
+  } catch (error) {
+    return { success: false, error: error.message };
+  }
+});
+
 // Terminal IPC
 ipcMain.on('terminal-input', (event, data) => {
   if (ptyProcess) {

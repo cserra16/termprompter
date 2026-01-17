@@ -11,6 +11,9 @@ class TermPrompterApp {
         this.recorder = new RecorderUI();
         this.demoTitle = document.getElementById('demoTitle');
         this.currentDemo = null;
+        this.editMode = false;
+        this.currentFilePath = null;
+        this.undoStack = [];
 
         this.init();
     }
@@ -36,6 +39,10 @@ class TermPrompterApp {
         // Open demo button
         const openBtn = document.getElementById('openDemoBtn');
         openBtn.addEventListener('click', () => this.openDemoDialog());
+
+        // Edit mode button
+        const editBtn = document.getElementById('editModeBtn');
+        editBtn.addEventListener('click', () => this.toggleEditMode());
 
         // Window controls
         const closeBtn = document.getElementById('closeBtn');
@@ -78,23 +85,31 @@ class TermPrompterApp {
      */
     setupKeyboardNavigation() {
         document.addEventListener('keydown', (e) => {
-            // Only handle navigation if not typing in terminal
+            // Handle undo in edit mode
+            if (this.editMode && (e.ctrlKey || e.metaKey) && e.key === 'z') {
+                e.preventDefault();
+                this.undo();
+                return;
+            }
+
+            // Only handle navigation if not typing in terminal or editable field
             const isTerminalFocused = document.activeElement?.closest('.terminal-container');
+            const isEditingField = document.activeElement?.contentEditable === 'true';
 
             // Use Page Up/Down for navigation even when terminal is focused
-            if (e.key === 'PageDown') {
+            if (e.key === 'PageDown' && !isEditingField) {
                 e.preventDefault();
                 this.sidebar.nextStep();
                 return;
             }
-            if (e.key === 'PageUp') {
+            if (e.key === 'PageUp' && !isEditingField) {
                 e.preventDefault();
                 this.sidebar.previousStep();
                 return;
             }
 
-            // Skip other shortcuts if terminal is focused
-            if (isTerminalFocused) return;
+            // Skip other shortcuts if terminal is focused or editing
+            if (isTerminalFocused || isEditingField) return;
 
             switch (e.key) {
                 case 'ArrowDown':
@@ -178,6 +193,7 @@ class TermPrompterApp {
         }
 
         this.currentDemo = parsed;
+        this.currentFilePath = filePath;
         this.demoTitle.textContent = parsed.title || this.getFileNameFromPath(filePath);
 
         // Render components
@@ -187,11 +203,127 @@ class TermPrompterApp {
 
     /**
      * Extract filename from path
-     * @param {string} filePath 
+     * @param {string} filePath
      * @returns {string}
      */
     getFileNameFromPath(filePath) {
         return filePath.split(/[/\\]/).pop().replace('.md', '');
+    }
+
+    /**
+     * Toggle edit mode
+     */
+    toggleEditMode() {
+        this.editMode = !this.editMode;
+        const editBtn = document.getElementById('editModeBtn');
+
+        if (this.editMode) {
+            editBtn.classList.add('active');
+            document.body.classList.add('edit-mode');
+            this.sidebar.enableEditMode(
+                (steps) => this.onStepsReordered(steps),
+                (index) => this.onStepAdded(index),
+                (index, field, value) => this.onStepEdited(index, field, value)
+            );
+        } else {
+            editBtn.classList.remove('active');
+            document.body.classList.remove('edit-mode');
+            this.sidebar.disableEditMode();
+        }
+    }
+
+    /**
+     * Handle steps reordering
+     */
+    onStepsReordered(newSteps) {
+        this.saveToUndoStack();
+        this.currentDemo.steps = newSteps;
+        this.syncToMarkdown();
+    }
+
+    /**
+     * Handle adding a new step
+     */
+    onStepAdded(index) {
+        this.saveToUndoStack();
+        const newStep = {
+            stepNumber: index + 1,
+            title: 'Nuevo paso',
+            command: 'echo "Nuevo comando"',
+            notes: 'Añade aquí las notas del paso'
+        };
+
+        this.currentDemo.steps.splice(index, 0, newStep);
+        this.renumberSteps();
+        this.syncToMarkdown();
+        this.sidebar.render(this.currentDemo.steps);
+        this.timeline.render(this.currentDemo.steps.length);
+    }
+
+    /**
+     * Handle step editing
+     */
+    onStepEdited(index, field, value) {
+        this.saveToUndoStack();
+        this.currentDemo.steps[index][field] = value;
+        this.syncToMarkdown();
+    }
+
+    /**
+     * Renumber steps after insertion or deletion
+     */
+    renumberSteps() {
+        this.currentDemo.steps.forEach((step, index) => {
+            step.stepNumber = index + 1;
+        });
+    }
+
+    /**
+     * Save current state to undo stack
+     */
+    saveToUndoStack() {
+        const state = JSON.parse(JSON.stringify(this.currentDemo));
+        this.undoStack.push(state);
+
+        // Limit undo stack to 50 items
+        if (this.undoStack.length > 50) {
+            this.undoStack.shift();
+        }
+    }
+
+    /**
+     * Undo last change
+     */
+    undo() {
+        if (this.undoStack.length === 0) return;
+
+        const previousState = this.undoStack.pop();
+        this.currentDemo = previousState;
+        this.syncToMarkdown();
+        this.sidebar.render(this.currentDemo.steps);
+        this.timeline.render(this.currentDemo.steps.length);
+    }
+
+    /**
+     * Sync current demo state to markdown file
+     */
+    async syncToMarkdown() {
+        if (!this.currentFilePath) return;
+
+        let markdown = `# ${this.currentDemo.title}\n\n`;
+
+        this.currentDemo.steps.forEach(step => {
+            markdown += `## Paso ${step.stepNumber}: ${step.title}\n`;
+            markdown += '```bash\n';
+            markdown += `${step.command}\n`;
+            markdown += '```\n';
+            if (step.notes) {
+                markdown += `${step.notes}\n`;
+            }
+            markdown += '\n';
+        });
+
+        await window.electronAPI.saveDemo(this.currentFilePath, markdown);
     }
 }
 
