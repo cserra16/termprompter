@@ -42,7 +42,7 @@ npm start
 
 Crea un archivo Markdown con el siguiente formato:
 
-```markdown
+````markdown
 # Mi Demo
 
 ## Paso 1: Descripción del paso
@@ -56,7 +56,7 @@ Notas para el presentador sobre este paso.
 otro_comando
 ```
 Más notas explicativas aquí.
-```
+````
 
 ### Controles de teclado
 
