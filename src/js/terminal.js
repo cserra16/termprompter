@@ -138,7 +138,7 @@ class TerminalComponent {
      */
     increaseFontSize() {
         if (this.terminal && this.terminal.options.fontSize < 32) {
-            this.terminal.options.fontSize += 1;
+            this.terminal.options.fontSize += 2;
             this.fit();
         }
     }
@@ -148,7 +148,7 @@ class TerminalComponent {
      */
     decreaseFontSize() {
         if (this.terminal && this.terminal.options.fontSize > 8) {
-            this.terminal.options.fontSize -= 1;
+            this.terminal.options.fontSize -= 2;
             this.fit();
         }
     }

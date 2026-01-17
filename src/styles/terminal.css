@@ -21,6 +21,11 @@
 .terminal-controls {
     display: flex;
     gap: var(--spacing-xs);
+    flex-shrink: 0;
+    /* Prevent shrinking */
+    flex-wrap: nowrap;
+    /* Prevent wrapping */
+    align-items: center;
 }
 
 .terminal-btn {
@@ -35,6 +40,8 @@
     align-items: center;
     justify-content: center;
     transition: all var(--transition-fast);
+    flex-shrink: 0;
+    /* Prevent shrinking */
 }
 
 .terminal-btn:hover {
