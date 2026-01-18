@@ -248,73 +248,25 @@ Notas explicativas sobre el comando`;
   }
 
   async generateWithOpenAI(config) {
-    // GPT-5 models use max_completion_tokens instead of max_tokens
-    const isGpt5 = config.model.startsWith('gpt-5');
-    const tokenParam = isGpt5 ? 'max_completion_tokens' : 'max_tokens';
+    // Use IPC to call API from main process (bypasses CSP)
+    const result = await window.electronAPI.generateWithOpenAI(config);
 
-    const requestBody = {
-      model: config.model,
-      messages: [
-        {
-          role: 'system',
-          content: config.systemPrompt
-        },
-        {
-          role: 'user',
-          content: config.userPrompt
-        }
-      ],
-      temperature: config.temperature,
-      [tokenParam]: config.maxTokens
-    };
-
-    const response = await fetch('https://api.openai.com/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${config.apiToken}`
-      },
-      body: JSON.stringify(requestBody)
-    });
-
-    if (!response.ok) {
-      const error = await response.json();
-      throw new Error(error.error?.message || 'Error en la API de OpenAI');
+    if (!result.success) {
+      throw new Error(result.error || 'Error en la API de OpenAI');
     }
 
-    const data = await response.json();
-    return data.choices[0].message.content;
+    return result.content;
   }
 
   async generateWithAnthropic(config) {
-    const response = await fetch('https://api.anthropic.com/v1/messages', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'x-api-key': config.apiToken,
-        'anthropic-version': '2023-06-01'
-      },
-      body: JSON.stringify({
-        model: config.model,
-        max_tokens: config.maxTokens,
-        temperature: config.temperature,
-        system: config.systemPrompt,
-        messages: [
-          {
-            role: 'user',
-            content: config.userPrompt
-          }
-        ]
-      })
-    });
+    // Use IPC to call API from main process (bypasses CSP)
+    const result = await window.electronAPI.generateWithAnthropic(config);
 
-    if (!response.ok) {
-      const error = await response.json();
-      throw new Error(error.error?.message || 'Error en la API de Anthropic');
+    if (!result.success) {
+      throw new Error(result.error || 'Error en la API de Anthropic');
     }
 
-    const data = await response.json();
-    return data.content[0].text;
+    return result.content;
   }
 
   async loadGeneratedDemo(markdown, topic) {

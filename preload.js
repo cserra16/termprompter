@@ -32,5 +32,9 @@ contextBridge.exposeInMainWorld('electronAPI', {
     startRecording: (options) => ipcRenderer.invoke('start-recording', options),
     stopRecording: () => ipcRenderer.invoke('stop-recording'),
     saveRecording: (filePath) => ipcRenderer.invoke('save-recording', filePath),
-    getRecordingStats: () => ipcRenderer.invoke('get-recording-stats')
+    getRecordingStats: () => ipcRenderer.invoke('get-recording-stats'),
+
+    // AI Generation API
+    generateWithOpenAI: (config) => ipcRenderer.invoke('ai-generate-openai', config),
+    generateWithAnthropic: (config) => ipcRenderer.invoke('ai-generate-anthropic', config)
 });
