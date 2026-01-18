@@ -232,17 +232,13 @@ Notas explicativas sobre el comando`;
       console.log('[AI Generator] Raw response length:', markdown?.length || 0);
       console.log('[AI Generator] Raw response preview:', markdown?.substring(0, 200));
 
-      // Save raw response before cleaning
+      // Save raw response for debugging
       const rawFilename = `raw-${Date.now()}.md`;
       await window.electronAPI.saveToGtpFiles(rawFilename, markdown || '(empty response)');
       console.log(`[AI Generator] Raw response saved to gtp-files/${rawFilename}`);
 
-      // Clean the response to extract only markdown content
-      const cleanedMarkdown = this.cleanMarkdownResponse(markdown);
-      console.log('[AI Generator] Cleaned response length:', cleanedMarkdown?.length || 0);
-
-      // Load the generated demo into the app
-      await this.loadGeneratedDemo(cleanedMarkdown, topic);
+      // Load the generated demo into the app (using raw response, no cleaning)
+      await this.loadGeneratedDemo(markdown, topic);
 
       // Close modal
       this.closeModal();
