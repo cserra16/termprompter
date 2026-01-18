@@ -150,6 +150,13 @@ class TermPrompterApp {
         this.sidebar.onInsertCommand = (command) => {
             this.terminal.writeCommand(command, false);
         };
+
+        // Auto-tracking: when a command is executed in terminal
+        this.terminal.onCommandExecuted = (command) => {
+            if (this.isAutoTrackEnabled()) {
+                this.handleCommandTracking(command);
+            }
+        };
     }
 
     /**
@@ -351,6 +358,37 @@ class TermPrompterApp {
         }
 
         return true;
+    }
+
+    /**
+     * Check if auto-tracking is enabled
+     * @returns {boolean}
+     */
+    isAutoTrackEnabled() {
+        const checkbox = document.getElementById('autoTrackCheckbox');
+        return checkbox && checkbox.checked;
+    }
+
+    /**
+     * Handle command tracking for auto-advance
+     * @param {string} executedCommand - Command that was executed
+     */
+    handleCommandTracking(executedCommand) {
+        const currentStep = this.sidebar.steps[this.sidebar.currentStepIndex];
+        if (!currentStep) return;
+
+        // Normalize commands for comparison (trim and normalize whitespace)
+        const normalizeCommand = (cmd) => cmd.trim().replace(/\s+/g, ' ');
+
+        const normalizedExecuted = normalizeCommand(executedCommand);
+        const normalizedExpected = normalizeCommand(currentStep.command);
+
+        if (normalizedExecuted === normalizedExpected) {
+            // Auto-advance to next card with a small delay for better UX
+            setTimeout(() => {
+                this.sidebar.nextStep();
+            }, 300);
+        }
     }
 }
 

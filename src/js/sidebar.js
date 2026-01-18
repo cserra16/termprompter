@@ -30,6 +30,9 @@ class Sidebar {
             return;
         }
 
+        // Render auto-track menu
+        this.renderAutoTrackMenu();
+
         steps.forEach((step, index) => {
             const card = this.createCard(step, index);
             this.container.appendChild(card);
@@ -37,6 +40,60 @@ class Sidebar {
 
         // Activate first step by default
         this.setActiveStep(0);
+    }
+
+    /**
+     * Render auto-track menu
+     */
+    renderAutoTrackMenu() {
+        // Check if menu already exists
+        let menu = this.container.parentElement.querySelector('.auto-track-menu');
+
+        if (!menu) {
+            menu = document.createElement('div');
+            menu.className = 'auto-track-menu';
+            menu.innerHTML = `
+                <div class="menu-toggle">
+                    <div>
+                        <svg class="menu-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <circle cx="12" cy="12" r="3"/>
+                            <path d="M12 1v6m0 6v6"/>
+                        </svg>
+                        <span>Opciones</span>
+                    </div>
+                    <svg class="chevron-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M6 9l6 6 6-6"/>
+                    </svg>
+                </div>
+                <div class="menu-content">
+                    <label class="menu-item">
+                        <input type="checkbox" id="autoTrackCheckbox">
+                        <span>Auto-avance con comandos</span>
+                    </label>
+                </div>
+            `;
+
+            // Insert before the cards container
+            this.container.parentElement.insertBefore(menu, this.container);
+
+            // Toggle menu on click
+            const toggle = menu.querySelector('.menu-toggle');
+            toggle.addEventListener('click', () => {
+                menu.classList.toggle('open');
+            });
+
+            // Load saved preference
+            const savedState = localStorage.getItem('autoTrackEnabled');
+            const checkbox = menu.querySelector('#autoTrackCheckbox');
+            if (savedState === 'true') {
+                checkbox.checked = true;
+            }
+
+            // Save preference on change
+            checkbox.addEventListener('change', (e) => {
+                localStorage.setItem('autoTrackEnabled', e.target.checked);
+            });
+        }
     }
 
     /**

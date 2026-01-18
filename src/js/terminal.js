@@ -10,6 +10,8 @@ class TerminalComponent {
         this.terminal = null;
         this.fitAddon = null;
         this.isInitialized = false;
+        this.commandBuffer = '';
+        this.onCommandExecuted = null; // Callback when a command is executed
     }
 
     /**
@@ -60,6 +62,8 @@ class TerminalComponent {
         // Handle terminal input -> send to PTY
         this.terminal.onData((data) => {
             window.electronAPI.terminalInput(data);
+            // Track commands for auto-tracking feature
+            this.handleCommandInput(data);
         });
 
         // Handle PTY output -> display in terminal
@@ -82,6 +86,33 @@ class TerminalComponent {
 
         // Focus terminal
         this.terminal.focus();
+    }
+
+    /**
+     * Handle command input tracking
+     * @param {string} data - Input data
+     */
+    handleCommandInput(data) {
+        // Detect Enter key (code \r or \n)
+        if (data === '\r' || data === '\n') {
+            const command = this.commandBuffer.trim();
+            if (command && this.onCommandExecuted) {
+                this.onCommandExecuted(command);
+            }
+            this.commandBuffer = '';
+        } else if (data === '\x7f') {
+            // Backspace
+            this.commandBuffer = this.commandBuffer.slice(0, -1);
+        } else if (data === '\x03') {
+            // Ctrl+C - clear buffer
+            this.commandBuffer = '';
+        } else if (data === '\x15') {
+            // Ctrl+U - clear line
+            this.commandBuffer = '';
+        } else if (data.charCodeAt(0) >= 32 && data.charCodeAt(0) < 127) {
+            // Only printable ASCII characters
+            this.commandBuffer += data;
+        }
     }
 
     /**
