@@ -304,9 +304,14 @@ ipcMain.handle('get-recording-stats', async () => {
 // AI API handlers (to bypass CSP restrictions in renderer)
 ipcMain.handle('ai-generate-openai', async (event, config) => {
   try {
-    // GPT-5 models use max_completion_tokens instead of max_tokens
+    // GPT-5 models have special requirements:
+    // - Use max_completion_tokens instead of max_tokens
+    // - Don't support custom temperature (must be 1 or omitted)
+    // - Need more tokens because they use internal reasoning
     const isGpt5 = config.model.startsWith('gpt-5');
     const tokenParam = isGpt5 ? 'max_completion_tokens' : 'max_tokens';
+    // GPT-5 needs more tokens for reasoning, minimum 8000
+    const tokenCount = isGpt5 ? Math.max(config.maxTokens, 8000) : config.maxTokens;
 
     const requestBody = {
       model: config.model,
@@ -314,9 +319,13 @@ ipcMain.handle('ai-generate-openai', async (event, config) => {
         { role: 'system', content: config.systemPrompt },
         { role: 'user', content: config.userPrompt }
       ],
-      temperature: config.temperature,
-      [tokenParam]: config.maxTokens
+      [tokenParam]: tokenCount
     };
+
+    // Only add temperature for non-GPT-5 models
+    if (!isGpt5) {
+      requestBody.temperature = config.temperature;
+    }
 
     console.log('[OpenAI API] Request model:', config.model);
     console.log('[OpenAI API] Request body:', JSON.stringify(requestBody, null, 2).substring(0, 500));
