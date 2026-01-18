@@ -8,7 +8,7 @@ class AIGenerator {
     this.provider = 'openai';
     this.config = {
       provider: 'openai',
-      model: 'gpt-5.2',
+      model: 'gpt-5',
       apiToken: '',
       temperature: 0.7,
       maxTokens: 2000
@@ -121,7 +121,7 @@ Notas explicativas sobre el comando`;
     if (provider === 'openai') {
       openaiModels.forEach(opt => opt.style.display = 'block');
       anthropicModels.forEach(opt => opt.style.display = 'none');
-      if (modelSelect) modelSelect.value = 'gpt-5.2';
+      if (modelSelect) modelSelect.value = 'gpt-5';
     } else {
       openaiModels.forEach(opt => opt.style.display = 'none');
       anthropicModels.forEach(opt => opt.style.display = 'block');
@@ -248,27 +248,33 @@ Notas explicativas sobre el comando`;
   }
 
   async generateWithOpenAI(config) {
+    // GPT-5 models use max_completion_tokens instead of max_tokens
+    const isGpt5 = config.model.startsWith('gpt-5');
+    const tokenParam = isGpt5 ? 'max_completion_tokens' : 'max_tokens';
+
+    const requestBody = {
+      model: config.model,
+      messages: [
+        {
+          role: 'system',
+          content: config.systemPrompt
+        },
+        {
+          role: 'user',
+          content: config.userPrompt
+        }
+      ],
+      temperature: config.temperature,
+      [tokenParam]: config.maxTokens
+    };
+
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${config.apiToken}`
       },
-      body: JSON.stringify({
-        model: config.model,
-        messages: [
-          {
-            role: 'system',
-            content: config.systemPrompt
-          },
-          {
-            role: 'user',
-            content: config.userPrompt
-          }
-        ],
-        temperature: config.temperature,
-        max_tokens: config.maxTokens
-      })
+      body: JSON.stringify(requestBody)
     });
 
     if (!response.ok) {
