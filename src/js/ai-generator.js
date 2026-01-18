@@ -228,6 +228,9 @@ Notas explicativas sobre el comando`;
         });
       }
 
+      // Clean the response to extract only markdown content
+      markdown = this.cleanMarkdownResponse(markdown);
+
       // Load the generated demo into the app
       await this.loadGeneratedDemo(markdown, topic);
 
@@ -298,6 +301,107 @@ Notas explicativas sobre el comando`;
       .replace(/[^a-z0-9]+/g, '-')
       .replace(/^-|-$/g, '')
       .substring(0, 50) + '.md';
+  }
+
+  /**
+   * Clean LLM response to extract only the markdown content.
+   * Removes conversational text like "Here's your file..." or "Let me know if..."
+   */
+  cleanMarkdownResponse(response) {
+    if (!response || typeof response !== 'string') {
+      return response;
+    }
+
+    let cleaned = response.trim();
+
+    // If the response contains a markdown code block, extract its content
+    const markdownBlockRegex = /```(?:markdown|md)?\s*\n([\s\S]*?)```/;
+    const blockMatch = cleaned.match(markdownBlockRegex);
+    if (blockMatch && blockMatch[1]) {
+      cleaned = blockMatch[1].trim();
+    }
+
+    // Split into lines for processing
+    const lines = cleaned.split('\n');
+    let startIndex = 0;
+    let endIndex = lines.length;
+
+    // Find where the actual markdown content starts (first line with #)
+    for (let i = 0; i < lines.length; i++) {
+      const line = lines[i].trim();
+      if (line.startsWith('#')) {
+        startIndex = i;
+        break;
+      }
+      // Skip common intro phrases
+      if (this.isConversationalLine(line)) {
+        startIndex = i + 1;
+      }
+    }
+
+    // Find where the actual markdown content ends (look for trailing conversational text)
+    for (let i = lines.length - 1; i > startIndex; i--) {
+      const line = lines[i].trim();
+      // If line is empty, continue looking
+      if (!line) {
+        endIndex = i;
+        continue;
+      }
+      // If it's a conversational line, exclude it
+      if (this.isConversationalLine(line)) {
+        endIndex = i;
+        continue;
+      }
+      // If we hit actual content, stop
+      break;
+    }
+
+    // Extract the clean markdown
+    cleaned = lines.slice(startIndex, endIndex).join('\n').trim();
+
+    // Final validation: ensure it starts with a heading
+    if (!cleaned.startsWith('#')) {
+      // Try to find the first heading and start from there
+      const headingMatch = cleaned.match(/^(#.+)/m);
+      if (headingMatch) {
+        const headingIndex = cleaned.indexOf(headingMatch[0]);
+        cleaned = cleaned.substring(headingIndex);
+      }
+    }
+
+    return cleaned;
+  }
+
+  /**
+   * Check if a line is conversational LLM text (not actual markdown content)
+   */
+  isConversationalLine(line) {
+    if (!line) return true;
+
+    const conversationalPatterns = [
+      // Spanish patterns
+      /^(aquí|aqui)\s+(tienes?|está|te\s+dejo)/i,
+      /^(claro|por\s+supuesto|vale|ok)/i,
+      /^si\s+necesitas?\s+(algo|ayuda|más)/i,
+      /^espero\s+que\s+(te\s+)?sea/i,
+      /^no\s+dudes\s+en/i,
+      /^¡?(hecho|listo|perfecto)!?/i,
+      /^a\s+continuación/i,
+      // English patterns
+      /^here('s|\s+is)\s+(the|your|a)/i,
+      /^sure[,!]?\s/i,
+      /^(let\s+me|i'll)\s+(know|create|help)/i,
+      /^(hope\s+this|this\s+should)/i,
+      /^(feel\s+free|don't\s+hesitate)/i,
+      /^(certainly|absolutely)[,!]?\s/i,
+      /^(great|perfect)[,!]?\s/i,
+      // Generic
+      /^[\*\-]\s*\*\*nota?\*\*/i,
+      /^nota?:/i,
+      /^\[.*nota.*\]/i
+    ];
+
+    return conversationalPatterns.some(pattern => pattern.test(line));
   }
 }
 
