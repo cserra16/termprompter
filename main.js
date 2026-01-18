@@ -167,6 +167,40 @@ ipcMain.handle('save-demo', async (event, filePath, content) => {
   }
 });
 
+ipcMain.handle('save-to-library', async (event, filename, content) => {
+  try {
+    const libraryPath = path.join(__dirname, 'library');
+
+    // Create library directory if it doesn't exist
+    if (!fs.existsSync(libraryPath)) {
+      fs.mkdirSync(libraryPath, { recursive: true });
+    }
+
+    const filePath = path.join(libraryPath, filename);
+    fs.writeFileSync(filePath, content, 'utf-8');
+    return { success: true, filePath };
+  } catch (error) {
+    return { success: false, error: error.message };
+  }
+});
+
+ipcMain.handle('save-to-gtp-files', async (event, filename, content) => {
+  try {
+    const gtpPath = path.join(__dirname, 'gtp-files');
+
+    // Create gtp-files directory if it doesn't exist
+    if (!fs.existsSync(gtpPath)) {
+      fs.mkdirSync(gtpPath, { recursive: true });
+    }
+
+    const filePath = path.join(gtpPath, filename);
+    fs.writeFileSync(filePath, content, 'utf-8');
+    return { success: true, filePath };
+  } catch (error) {
+    return { success: false, error: error.message };
+  }
+});
+
 // Terminal IPC
 ipcMain.on('terminal-input', (event, data) => {
   if (ptyProcess) {
@@ -262,6 +296,100 @@ ipcMain.handle('get-recording-stats', async () => {
     const stats = recorder.getStats();
     const isRecording = recorder.isRecording;
     return { success: true, stats, isRecording };
+  } catch (error) {
+    return { success: false, error: error.message };
+  }
+});
+
+// AI API handlers (to bypass CSP restrictions in renderer)
+ipcMain.handle('ai-generate-openai', async (event, config) => {
+  try {
+    // GPT-5 models have special requirements:
+    // - Use max_completion_tokens instead of max_tokens
+    // - Don't support custom temperature (must be 1 or omitted)
+    // - Need more tokens because they use internal reasoning
+    const isGpt5 = config.model.startsWith('gpt-5');
+    const tokenParam = isGpt5 ? 'max_completion_tokens' : 'max_tokens';
+    // GPT-5 needs more tokens for reasoning, minimum 8000
+    const tokenCount = isGpt5 ? Math.max(config.maxTokens, 8000) : config.maxTokens;
+
+    const requestBody = {
+      model: config.model,
+      messages: [
+        { role: 'system', content: config.systemPrompt },
+        { role: 'user', content: config.userPrompt }
+      ],
+      [tokenParam]: tokenCount
+    };
+
+    // Only add temperature for non-GPT-5 models
+    if (!isGpt5) {
+      requestBody.temperature = config.temperature;
+    }
+
+    console.log('[OpenAI API] Request model:', config.model);
+    console.log('[OpenAI API] Request body:', JSON.stringify(requestBody, null, 2).substring(0, 500));
+
+    const response = await fetch('https://api.openai.com/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${config.apiToken}`
+      },
+      body: JSON.stringify(requestBody)
+    });
+
+    console.log('[OpenAI API] Response status:', response.status);
+
+    if (!response.ok) {
+      const error = await response.json();
+      console.log('[OpenAI API] Error response:', JSON.stringify(error));
+      return { success: false, error: error.error?.message || 'Error en la API de OpenAI' };
+    }
+
+    const data = await response.json();
+    console.log('[OpenAI API] Response keys:', Object.keys(data));
+    console.log('[OpenAI API] Choices:', JSON.stringify(data.choices, null, 2).substring(0, 1000));
+
+    const content = data.choices?.[0]?.message?.content;
+    console.log('[OpenAI API] Content type:', typeof content);
+    console.log('[OpenAI API] Content length:', content?.length || 0);
+    console.log('[OpenAI API] Content preview:', content?.substring(0, 200) || '(empty)');
+
+    return { success: true, content: content };
+  } catch (error) {
+    console.log('[OpenAI API] Exception:', error.message);
+    return { success: false, error: error.message };
+  }
+});
+
+ipcMain.handle('ai-generate-anthropic', async (event, config) => {
+  try {
+    const response = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': config.apiToken,
+        'anthropic-version': '2023-06-01'
+      },
+      body: JSON.stringify({
+        model: config.model,
+        max_tokens: config.maxTokens,
+        temperature: config.temperature,
+        system: config.systemPrompt,
+        messages: [
+          { role: 'user', content: config.userPrompt }
+        ]
+      })
+    });
+
+    if (!response.ok) {
+      const error = await response.json();
+      return { success: false, error: error.error?.message || 'Error en la API de Anthropic' };
+    }
+
+    const data = await response.json();
+    return { success: true, content: data.content[0].text };
   } catch (error) {
     return { success: false, error: error.message };
   }

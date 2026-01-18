@@ -10,6 +10,9 @@ contextBridge.exposeInMainWorld('electronAPI', {
     // Save demo file
     saveDemo: (filePath, content) => ipcRenderer.invoke('save-demo', filePath, content),
 
+    // Save to library (AI-generated demos)
+    saveToLibrary: (filename, content) => ipcRenderer.invoke('save-to-library', filename, content),
+
     // Window controls
     closeWindow: () => ipcRenderer.send('close-window'),
     minimizeWindow: () => ipcRenderer.send('minimize-window'),
@@ -29,5 +32,12 @@ contextBridge.exposeInMainWorld('electronAPI', {
     startRecording: (options) => ipcRenderer.invoke('start-recording', options),
     stopRecording: () => ipcRenderer.invoke('stop-recording'),
     saveRecording: (filePath) => ipcRenderer.invoke('save-recording', filePath),
-    getRecordingStats: () => ipcRenderer.invoke('get-recording-stats')
+    getRecordingStats: () => ipcRenderer.invoke('get-recording-stats'),
+
+    // AI Generation API
+    generateWithOpenAI: (config) => ipcRenderer.invoke('ai-generate-openai', config),
+    generateWithAnthropic: (config) => ipcRenderer.invoke('ai-generate-anthropic', config),
+
+    // Debug: save to gtp-files
+    saveToGtpFiles: (filename, content) => ipcRenderer.invoke('save-to-gtp-files', filename, content)
 });

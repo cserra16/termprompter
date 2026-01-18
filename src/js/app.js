@@ -325,6 +325,33 @@ class TermPrompterApp {
 
         await window.electronAPI.saveDemo(this.currentFilePath, markdown);
     }
+
+    /**
+     * Load a demo from parsed data (used by AI generator)
+     * @param {Object} demo - Parsed demo object
+     * @param {string} filePath - Path to the demo file
+     */
+    loadDemo(demo, filePath) {
+        if (!MarkdownParser.isValid(demo)) {
+            console.error('Invalid demo format');
+            return false;
+        }
+
+        this.currentDemo = demo;
+        this.currentFilePath = filePath;
+        this.demoTitle.textContent = demo.title || this.getFileNameFromPath(filePath);
+
+        // Render components
+        this.sidebar.render(demo.steps);
+        this.timeline.render(demo.steps.length);
+
+        // Reset edit mode if active
+        if (this.editMode) {
+            this.toggleEditMode();
+        }
+
+        return true;
+    }
 }
 
 // Initialize app when DOM is ready
