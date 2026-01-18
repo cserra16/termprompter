@@ -273,11 +273,16 @@ Notas explicativas sobre el comando`;
   }
 
   async loadGeneratedDemo(markdown, topic) {
+    // Always save the raw response to gtp-files for debugging
+    const debugFilename = this.sanitizeFilename(topic || 'generated-demo');
+    await window.electronAPI.saveToGtpFiles(debugFilename, markdown);
+    console.log(`[AI Generator] Raw response saved to gtp-files/${debugFilename}`);
+
     // Parse the markdown
     const demo = MarkdownParser.parse(markdown);
 
     if (!demo || !demo.steps || demo.steps.length === 0) {
-      throw new Error('El markdown generado no tiene el formato correcto');
+      throw new Error(`El markdown generado no tiene el formato correcto. Revisa el archivo guardado en gtp-files/${debugFilename}`);
     }
 
     // Save to library using the existing save functionality

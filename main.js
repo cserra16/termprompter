@@ -184,6 +184,23 @@ ipcMain.handle('save-to-library', async (event, filename, content) => {
   }
 });
 
+ipcMain.handle('save-to-gtp-files', async (event, filename, content) => {
+  try {
+    const gtpPath = path.join(__dirname, 'gtp-files');
+
+    // Create gtp-files directory if it doesn't exist
+    if (!fs.existsSync(gtpPath)) {
+      fs.mkdirSync(gtpPath, { recursive: true });
+    }
+
+    const filePath = path.join(gtpPath, filename);
+    fs.writeFileSync(filePath, content, 'utf-8');
+    return { success: true, filePath };
+  } catch (error) {
+    return { success: false, error: error.message };
+  }
+});
+
 // Terminal IPC
 ipcMain.on('terminal-input', (event, data) => {
   if (ptyProcess) {

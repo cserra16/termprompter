@@ -36,5 +36,8 @@ contextBridge.exposeInMainWorld('electronAPI', {
 
     // AI Generation API
     generateWithOpenAI: (config) => ipcRenderer.invoke('ai-generate-openai', config),
-    generateWithAnthropic: (config) => ipcRenderer.invoke('ai-generate-anthropic', config)
+    generateWithAnthropic: (config) => ipcRenderer.invoke('ai-generate-anthropic', config),
+
+    // Debug: save to gtp-files
+    saveToGtpFiles: (filename, content) => ipcRenderer.invoke('save-to-gtp-files', filename, content)
 });
