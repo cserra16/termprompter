@@ -6,27 +6,55 @@ Herramienta didáctica en Electron para realizar demostraciones interactivas usa
 
 ## Descripción
 
-TermPrompter es una aplicación de escritorio que se acopla a la ventana de tu terminal como una barra lateral, mostrando un guión de comandos paso a paso. Ideal para:
+TermPrompter es una aplicación de escritorio que combina una terminal integrada con un sistema de guiones paso a paso. Ideal para:
 
 - 📚 **Formadores y profesores** - Presenta demos técnicas sin perder el hilo
 - 🎥 **Creadores de contenido** - Graba tutoriales siguiendo un guión estructurado
 - 🎤 **Ponentes** - Realiza demostraciones en conferencias sin improvisar
+- 🤖 **Generación con IA** - Crea demos automáticamente con GPT-5 o Claude
 
 ## Características
 
-- 📋 **Tarjetas de comandos** - Visualiza cada paso con su comando y notas explicativas
-- 🚇 **Timeline visual** - Seguimiento del progreso tipo "línea de metro"
-- ⌨️ **Navegación por teclado** - Avanza con las flechas o Enter
-- 📄 **Formato Markdown** - Define tus demos en archivos `.md` fáciles de editar
-- 🎨 **Tema oscuro** - Diseñado para combinar con cualquier terminal
-- 📋 **Copiar comandos** - Un clic para copiar el comando al portapapeles
-- 🎬 **Grabación de terminal** - Captura sesiones completas en formato asciicast (compatible con asciinema)
+### Terminal Integrada
+- 🖥️ **Terminal real xterm.js** - Terminal completa con soporte PTY
+- 🔤 **Control de fuente** - Aumenta/reduce el tamaño con botones +/-
+- 🧹 **Limpiar terminal** - Botón para limpiar la pantalla
+
+### Guión de Comandos
+- 📋 **Tarjetas de pasos** - Cada paso con comando y notas explicativas
+- 🚇 **Timeline visual** - Progreso tipo "línea de metro"
+- ⌨️ **Navegación por teclado** - Flechas, Page Up/Down, Home/End
+- 📝 **Modo edición** - Edita y reordena pasos directamente en la app
+- 🔄 **Auto-tracking** - Avanza automáticamente cuando ejecutas el comando correcto
+
+### Generación con IA
+- 🤖 **OpenAI GPT-5** - Genera demos con los últimos modelos de OpenAI
+- 🧠 **Anthropic Claude** - Soporte para Claude Opus 4.5, Sonnet y Haiku
+- ⚙️ **Configurable** - Ajusta temperatura, tokens y prompts personalizados
+
+### Grabación
+- 🎬 **Grabación de sesiones** - Captura todo lo que ocurre en terminal
+- 📼 **Formato asciicast v2** - Compatible con asciinema player
+- ⏱️ **Indicador de tiempo** - Muestra duración de la grabación
+
+## Demos Incluidas
+
+El proyecto incluye cursos completos listos para usar:
+
+### Docker (8 demos)
+- Introducción, Imágenes, Contenedores avanzados
+- Volúmenes, Redes, Dockerfile
+- Docker Compose, Proyecto final
+
+### Linux (6 demos)
+- Comandos básicos, Gestión de archivos
+- Permisos, Procesos, Redes, Avanzado
 
 ## Instalación
 
 ```bash
 # Clonar el repositorio
-git clone https://github.com/usuario/termprompter.git
+git clone https://github.com/cserra16/termprompter.git
 cd termprompter
 
 # Instalar dependencias
@@ -58,26 +86,45 @@ otro_comando
 Más notas explicativas aquí.
 ````
 
+### Generar demos con IA
+
+1. Haz clic en el botón ⭐ (estrella) en la barra de título
+2. Selecciona el proveedor (OpenAI o Anthropic)
+3. Introduce tu API key
+4. Escribe el tema de la demo
+5. Haz clic en "Generar Demo"
+
 ### Controles de teclado
 
 | Tecla | Acción |
 |-------|--------|
-| `↓` `→` `Enter` `Espacio` | Siguiente paso |
+| `Page Down` | Siguiente paso (funciona siempre) |
+| `Page Up` | Paso anterior (funciona siempre) |
+| `↓` `→` | Siguiente paso |
 | `↑` `←` | Paso anterior |
 | `Home` | Ir al primer paso |
 | `End` | Ir al último paso |
+| `Ctrl+Z` | Deshacer (en modo edición) |
 
 ## Estructura del proyecto
 
 ```
 termprompter/
-├── main.js           # Proceso principal Electron
-├── preload.js        # Script de precarga IPC
+├── main.js              # Proceso principal Electron + API handlers
+├── preload.js           # Bridge IPC seguro
+├── recorder.js          # Grabador de terminal
 ├── src/
-│   ├── index.html    # HTML principal
-│   ├── styles/       # Estilos CSS
-│   └── js/           # Módulos JavaScript
-└── demos/            # Demos de ejemplo
+│   ├── index.html       # HTML principal
+│   ├── styles/          # Estilos CSS
+│   └── js/
+│       ├── app.js       # Aplicación principal
+│       ├── terminal.js  # Componente de terminal
+│       ├── sidebar.js   # Panel de tarjetas
+│       ├── timeline.js  # Línea de progreso
+│       ├── ai-generator.js  # Generador de demos con IA
+│       └── recorder-ui.js   # UI de grabación
+├── demos/               # Demos de ejemplo (Docker, Linux)
+└── library/             # Demos generadas por IA
 ```
 
 ## Desarrollo
@@ -87,21 +134,18 @@ termprompter/
 npm run dev
 ```
 
-## Grabación de Terminal
-
-TermPrompter incluye funcionalidad de grabación similar a asciinema. Puedes:
-- Grabar sesiones de terminal completas
-- Guardar en formato asciicast v2 (.cast)
-- Reproducir con asciinema player o cualquier herramienta compatible
-
-Consulta [RECORDING.md](RECORDING.md) para más información sobre la funcionalidad de grabación.
-
 ## Tecnologías
 
 - [Electron](https://www.electronjs.org/) - Framework de aplicación de escritorio
-- [Marked](https://marked.js.org/) - Parser de Markdown
-- [xterm.js](https://xtermjs.org/) - Terminal emulator para el navegador
+- [xterm.js](https://xtermjs.org/) - Emulador de terminal
 - [node-pty](https://github.com/microsoft/node-pty) - Pseudo terminal bindings
+- [OpenAI API](https://platform.openai.com/) - GPT-5 para generación de demos
+- [Anthropic API](https://www.anthropic.com/) - Claude para generación de demos
+
+## Documentación adicional
+
+- [RECORDING.md](RECORDING.md) - Detalles sobre grabación de terminal
+- [AI_GENERATOR_README.md](AI_GENERATOR_README.md) - Guía del generador de IA
 
 ## Licencia
 
