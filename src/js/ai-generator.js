@@ -228,11 +228,21 @@ Notas explicativas sobre el comando`;
         });
       }
 
+      // Log raw response for debugging
+      console.log('[AI Generator] Raw response length:', markdown?.length || 0);
+      console.log('[AI Generator] Raw response preview:', markdown?.substring(0, 200));
+
+      // Save raw response before cleaning
+      const rawFilename = `raw-${Date.now()}.md`;
+      await window.electronAPI.saveToGtpFiles(rawFilename, markdown || '(empty response)');
+      console.log(`[AI Generator] Raw response saved to gtp-files/${rawFilename}`);
+
       // Clean the response to extract only markdown content
-      markdown = this.cleanMarkdownResponse(markdown);
+      const cleanedMarkdown = this.cleanMarkdownResponse(markdown);
+      console.log('[AI Generator] Cleaned response length:', cleanedMarkdown?.length || 0);
 
       // Load the generated demo into the app
-      await this.loadGeneratedDemo(markdown, topic);
+      await this.loadGeneratedDemo(cleanedMarkdown, topic);
 
       // Close modal
       this.closeModal();
