@@ -318,6 +318,9 @@ ipcMain.handle('ai-generate-openai', async (event, config) => {
       [tokenParam]: config.maxTokens
     };
 
+    console.log('[OpenAI API] Request model:', config.model);
+    console.log('[OpenAI API] Request body:', JSON.stringify(requestBody, null, 2).substring(0, 500));
+
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
       headers: {
@@ -327,14 +330,26 @@ ipcMain.handle('ai-generate-openai', async (event, config) => {
       body: JSON.stringify(requestBody)
     });
 
+    console.log('[OpenAI API] Response status:', response.status);
+
     if (!response.ok) {
       const error = await response.json();
+      console.log('[OpenAI API] Error response:', JSON.stringify(error));
       return { success: false, error: error.error?.message || 'Error en la API de OpenAI' };
     }
 
     const data = await response.json();
-    return { success: true, content: data.choices[0].message.content };
+    console.log('[OpenAI API] Response keys:', Object.keys(data));
+    console.log('[OpenAI API] Choices:', JSON.stringify(data.choices, null, 2).substring(0, 1000));
+
+    const content = data.choices?.[0]?.message?.content;
+    console.log('[OpenAI API] Content type:', typeof content);
+    console.log('[OpenAI API] Content length:', content?.length || 0);
+    console.log('[OpenAI API] Content preview:', content?.substring(0, 200) || '(empty)');
+
+    return { success: true, content: content };
   } catch (error) {
+    console.log('[OpenAI API] Exception:', error.message);
     return { success: false, error: error.message };
   }
 });
