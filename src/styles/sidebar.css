@@ -340,3 +340,92 @@
 .editable-field:hover {
     background: rgba(255, 255, 255, 0.05);
 }
+
+/* ===== Auto-Track Menu ===== */
+.auto-track-menu {
+    margin: 0 var(--spacing-md) var(--spacing-md);
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-lg);
+    overflow: hidden;
+    transition: all var(--transition-normal);
+}
+
+.menu-toggle {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: var(--spacing-sm) var(--spacing-md);
+    background: linear-gradient(135deg, var(--bg-tertiary) 0%, var(--bg-secondary) 100%);
+    cursor: pointer;
+    user-select: none;
+    transition: all var(--transition-fast);
+}
+
+.menu-toggle:hover {
+    background: linear-gradient(135deg, var(--bg-secondary) 0%, var(--bg-tertiary) 100%);
+}
+
+.menu-toggle > div:first-child {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+}
+
+.menu-icon {
+    color: var(--accent-secondary);
+}
+
+.menu-toggle span {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-primary);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.chevron-icon {
+    color: var(--text-muted);
+    transition: transform var(--transition-fast);
+}
+
+.auto-track-menu.open .chevron-icon {
+    transform: rotate(180deg);
+}
+
+.menu-content {
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height var(--transition-normal);
+}
+
+.auto-track-menu.open .menu-content {
+    max-height: 200px;
+}
+
+.menu-item {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+    padding: var(--spacing-md);
+    cursor: pointer;
+    transition: background var(--transition-fast);
+    border-top: 1px solid var(--border-color);
+}
+
+.menu-item:hover {
+    background: var(--bg-card-hover);
+}
+
+.menu-item input[type="checkbox"] {
+    width: 18px;
+    height: 18px;
+    cursor: pointer;
+    accent-color: var(--accent-primary);
+}
+
+.menu-item span {
+    font-size: 14px;
+    color: var(--text-secondary);
+    flex: 1;
+}
