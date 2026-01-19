@@ -4,9 +4,12 @@
 
 Herramienta didáctica en Electron para realizar demostraciones interactivas usando la terminal.
 
-<p align="center">
-  <img src="img/TermPrompter-capture.png.png" alt="screenshot">
-</p>
+## 🎬 Demo
+
+<video src="https://github.com/cserra16/termprompter/raw/main/img/termprompter-demo.mp4" controls width="100%">
+  Tu navegador no soporta la etiqueta de vídeo. <a href="img/termprompter-demo.mp4">Descargar vídeo</a>
+</video>
+
 
 ## Descripción
 
