@@ -7,6 +7,10 @@ const yaml = require('js-yaml');
 const TerminalRecorder = require('./recorder');
 const DockerManager = require('./docker-manager');
 
+// Suppress SSL/DNS errors
+app.commandLine.appendSwitch('ignore-certificate-errors');
+app.commandLine.appendSwitch('ignore-ssl-errors');
+
 let mainWindow;
 let terminalWindow = null;
 let isTerminalDetached = false;
@@ -21,23 +25,23 @@ let isDockerSession = false; // Track if current session is Docker-based
  * @returns {{ frontmatter: object|null, content: string }}
  */
 function parseFrontmatter(content) {
-    const frontmatterRegex = /^---\r?\n([\s\S]*?)\r?\n---\r?\n([\s\S]*)$/;
-    const match = content.match(frontmatterRegex);
+  const frontmatterRegex = /^---\r?\n([\s\S]*?)\r?\n---\r?\n([\s\S]*)$/;
+  const match = content.match(frontmatterRegex);
 
-    if (match) {
-        try {
-            const frontmatter = yaml.load(match[1]);
-            return {
-                frontmatter,
-                content: match[2]
-            };
-        } catch (error) {
-            console.error('[Frontmatter] Error parsing YAML:', error.message);
-            return { frontmatter: null, content };
-        }
+  if (match) {
+    try {
+      const frontmatter = yaml.load(match[1]);
+      return {
+        frontmatter,
+        content: match[2]
+      };
+    } catch (error) {
+      console.error('[Frontmatter] Error parsing YAML:', error.message);
+      return { frontmatter: null, content };
     }
+  }
 
-    return { frontmatter: null, content };
+  return { frontmatter: null, content };
 }
 
 // Determine shell based on platform
