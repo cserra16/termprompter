@@ -21,6 +21,7 @@ TermPrompter es una aplicación de escritorio que combina una terminal integrada
 - 🖥️ **Terminal real xterm.js** - Terminal completa con soporte PTY
 - 🔤 **Control de fuente** - Aumenta/reduce el tamaño con botones +/-
 - 🧹 **Limpiar terminal** - Botón para limpiar la pantalla
+- ⌨️ **Visualización de teclas** - Muestra las combinaciones de teclado en tiempo real (similar a keyviz)
 
 ### Guión de Comandos
 - 📋 **Tarjetas de pasos** - Cada paso con comando y notas explicativas
@@ -96,6 +97,15 @@ Más notas explicativas aquí.
 4. Escribe el tema de la demo
 5. Haz clic en "Generar Demo"
 
+### Visualización de teclas
+
+TermPrompter incluye un visualizador de pulsaciones de teclado en tiempo real, similar a [keyviz](https://github.com/mulaRahul/keyviz), ideal para:
+- 🎥 **Grabar tutoriales** - Muestra al espectador las teclas que presionas
+- 🎤 **Presentaciones** - Ayuda a la audiencia a seguir tus atajos de teclado
+- 📚 **Enseñanza** - Demuestra combinaciones de teclas de forma visual
+
+Para activar/desactivar la visualización, haz clic en el botón ⌨️ (teclado) en la barra de título.
+
 ### Controles de teclado
 
 | Tecla | Acción |
@@ -118,13 +128,19 @@ termprompter/
 ├── src/
 │   ├── index.html       # HTML principal
 │   ├── styles/          # Estilos CSS
+│   │   ├── main.css
+│   │   ├── sidebar.css
+│   │   ├── timeline.css
+│   │   ├── terminal.css
+│   │   └── keystroke.css    # Estilos del visualizador de teclas
 │   └── js/
 │       ├── app.js       # Aplicación principal
 │       ├── terminal.js  # Componente de terminal
 │       ├── sidebar.js   # Panel de tarjetas
 │       ├── timeline.js  # Línea de progreso
 │       ├── ai-generator.js  # Generador de demos con IA
-│       └── recorder-ui.js   # UI de grabación
+│       ├── recorder-ui.js   # UI de grabación
+│       └── keystroke-display.js  # Visualizador de teclas
 ├── demos/               # Demos de ejemplo (Docker, Linux)
 └── library/             # Demos generadas por IA
 ```

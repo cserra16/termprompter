@@ -9,6 +9,7 @@ class TermPrompterApp {
         this.timeline = new Timeline('#timelineContainer');
         this.terminal = new TerminalComponent('#terminalContainer');
         this.recorder = new RecorderUI();
+        this.keystrokeDisplay = new KeyStrokeDisplay();
         this.demoTitle = document.getElementById('demoTitle');
         this.currentDemo = null;
         this.editMode = false;
@@ -76,6 +77,19 @@ class TermPrompterApp {
         if (decreaseFontBtn) {
             decreaseFontBtn.addEventListener('click', () => {
                 this.terminal.decreaseFontSize();
+            });
+        }
+
+        // KeyStroke display toggle button
+        const keystrokeToggleBtn = document.getElementById('keystrokeToggleBtn');
+        if (keystrokeToggleBtn) {
+            keystrokeToggleBtn.addEventListener('click', () => {
+                const isEnabled = this.keystrokeDisplay.toggle();
+                if (isEnabled) {
+                    keystrokeToggleBtn.classList.add('active');
+                } else {
+                    keystrokeToggleBtn.classList.remove('active');
+                }
             });
         }
     }
