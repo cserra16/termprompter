@@ -109,6 +109,7 @@ class MarkdownParser {
         let codeBlockContent = [];
         let notesBuffer = [];
         let stepNumber = 0;
+        let currentCommand = null;
 
         // Get title from first heading
         for (const line of lines) {
@@ -125,18 +126,25 @@ class MarkdownParser {
             // Code block handling
             if (line.startsWith('```')) {
                 if (!inCodeBlock) {
+                    // Start of new code block
+                    // If we have a previous command waiting, push it as a step with collected notes
+                    if (currentCommand !== null) {
+                        stepNumber++;
+                        result.steps.push({
+                            stepNumber,
+                            title: `Paso ${stepNumber}`,
+                            command: currentCommand,
+                            notes: notesBuffer.join('\n').trim()
+                        });
+                        notesBuffer = [];
+                        currentCommand = null;
+                    }
                     inCodeBlock = true;
                     codeBlockContent = [];
                 } else {
+                    // End of code block
                     inCodeBlock = false;
-                    stepNumber++;
-                    result.steps.push({
-                        stepNumber,
-                        title: `Paso ${stepNumber}`,
-                        command: codeBlockContent.join('\n').trim(),
-                        notes: notesBuffer.join('\n').trim()
-                    });
-                    notesBuffer = [];
+                    currentCommand = codeBlockContent.join('\n').trim();
                 }
                 continue;
             }
@@ -144,11 +152,20 @@ class MarkdownParser {
             if (inCodeBlock) {
                 codeBlockContent.push(line);
             } else if (line.trim() && !line.startsWith('#')) {
-                // Collect notes before next code block
-                if (result.steps.length === 0 || notesBuffer.length === 0) {
-                    notesBuffer.push(line);
-                }
+                // Collect notes
+                notesBuffer.push(line);
             }
+        }
+
+        // Push the final step if exists
+        if (currentCommand !== null) {
+            stepNumber++;
+            result.steps.push({
+                stepNumber,
+                title: `Paso ${stepNumber}`,
+                command: currentCommand,
+                notes: notesBuffer.join('\n').trim()
+            });
         }
 
         return result;
