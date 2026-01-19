@@ -55,5 +55,21 @@ contextBridge.exposeInMainWorld('electronAPI', {
     generateWithAnthropic: (config) => ipcRenderer.invoke('ai-generate-anthropic', config),
 
     // Debug: save to gtp-files
-    saveToGtpFiles: (filename, content) => ipcRenderer.invoke('save-to-gtp-files', filename, content)
+    saveToGtpFiles: (filename, content) => ipcRenderer.invoke('save-to-gtp-files', filename, content),
+
+    // Docker API
+    startDockerSession: (dockerConfig, basePath) => ipcRenderer.invoke('start-docker-session', dockerConfig, basePath),
+    stopDockerSession: () => ipcRenderer.invoke('stop-docker-session'),
+    getDockerStatus: () => ipcRenderer.invoke('get-docker-status'),
+    checkDockerAvailable: () => ipcRenderer.invoke('check-docker-available'),
+    onDockerPullProgress: (callback) => {
+        ipcRenderer.on('docker-pull-progress', (event, progress) => callback(progress));
+    },
+    onDockerSessionEnded: (callback) => {
+        ipcRenderer.on('docker-session-ended', () => callback());
+    },
+    removeDockerListeners: () => {
+        ipcRenderer.removeAllListeners('docker-pull-progress');
+        ipcRenderer.removeAllListeners('docker-session-ended');
+    }
 });

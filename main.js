@@ -3,13 +3,42 @@ const path = require('path');
 const fs = require('fs');
 const os = require('os');
 const pty = require('node-pty');
+const yaml = require('js-yaml');
 const TerminalRecorder = require('./recorder');
+const DockerManager = require('./docker-manager');
 
 let mainWindow;
 let terminalWindow = null;
 let isTerminalDetached = false;
 let ptyProcess = null;
 let recorder = new TerminalRecorder();
+let dockerManager = new DockerManager();
+let isDockerSession = false; // Track if current session is Docker-based
+
+/**
+ * Parse YAML frontmatter from markdown content
+ * @param {string} content - The markdown content
+ * @returns {{ frontmatter: object|null, content: string }}
+ */
+function parseFrontmatter(content) {
+    const frontmatterRegex = /^---\r?\n([\s\S]*?)\r?\n---\r?\n([\s\S]*)$/;
+    const match = content.match(frontmatterRegex);
+
+    if (match) {
+        try {
+            const frontmatter = yaml.load(match[1]);
+            return {
+                frontmatter,
+                content: match[2]
+            };
+        } catch (error) {
+            console.error('[Frontmatter] Error parsing YAML:', error.message);
+            return { frontmatter: null, content };
+        }
+    }
+
+    return { frontmatter: null, content };
+}
 
 // Determine shell based on platform
 function getShell() {
@@ -56,10 +85,14 @@ function createWindow() {
   // Create PTY process
   createPty();
 
-  mainWindow.on('closed', () => {
+  mainWindow.on('closed', async () => {
     if (ptyProcess) {
       ptyProcess.kill();
       ptyProcess = null;
+    }
+    // Stop Docker container if active
+    if (dockerManager.hasActiveSession()) {
+      await dockerManager.stopContainer();
     }
   });
 }
@@ -150,8 +183,15 @@ ipcMain.handle('load-demo', async (event, filePath) => {
       demoPath = path.join(__dirname, 'demos', 'example-demo.md');
     }
 
-    const content = fs.readFileSync(demoPath, 'utf-8');
-    return { success: true, content, filePath: demoPath };
+    const rawContent = fs.readFileSync(demoPath, 'utf-8');
+    const { frontmatter, content } = parseFrontmatter(rawContent);
+
+    return {
+      success: true,
+      content,
+      filePath: demoPath,
+      dockerConfig: frontmatter?.docker || null
+    };
   } catch (error) {
     return { success: false, error: error.message };
   }
@@ -168,8 +208,15 @@ ipcMain.handle('open-demo-dialog', async () => {
 
   if (!result.canceled && result.filePaths.length > 0) {
     const filePath = result.filePaths[0];
-    const content = fs.readFileSync(filePath, 'utf-8');
-    return { success: true, content, filePath };
+    const rawContent = fs.readFileSync(filePath, 'utf-8');
+    const { frontmatter, content } = parseFrontmatter(rawContent);
+
+    return {
+      success: true,
+      content,
+      filePath,
+      dockerConfig: frontmatter?.docker || null
+    };
   }
 
   return { success: false, canceled: true };
@@ -220,26 +267,31 @@ ipcMain.handle('save-to-gtp-files', async (event, filename, content) => {
 
 // Terminal IPC
 ipcMain.on('terminal-input', (event, data) => {
-  if (ptyProcess) {
+  if (isDockerSession && dockerManager.hasActiveSession()) {
+    // Send to Docker container
+    dockerManager.write(data);
+    recorder.recordInput(data);
+  } else if (ptyProcess) {
     ptyProcess.write(data);
-
-    // Record input if recording is active
     recorder.recordInput(data);
   }
 });
 
-ipcMain.on('terminal-resize', (event, { cols, rows }) => {
-  if (ptyProcess) {
+ipcMain.on('terminal-resize', async (event, { cols, rows }) => {
+  if (isDockerSession && dockerManager.hasActiveSession()) {
+    // Resize Docker exec
+    await dockerManager.resize(cols, rows);
+    recorder.updateDimensions(cols, rows);
+  } else if (ptyProcess) {
     ptyProcess.resize(cols, rows);
-
-    // Update recording dimensions if recording is active
     recorder.updateDimensions(cols, rows);
   }
 });
 
 ipcMain.on('terminal-write-command', (event, command) => {
-  if (ptyProcess) {
-    // Write command to terminal (user can press Enter to execute)
+  if (isDockerSession && dockerManager.hasActiveSession()) {
+    dockerManager.write(command);
+  } else if (ptyProcess) {
     ptyProcess.write(command);
   }
 });
@@ -401,6 +453,120 @@ ipcMain.handle('get-recording-stats', async () => {
   }
 });
 
+// Docker IPC handlers
+ipcMain.handle('start-docker-session', async (event, dockerConfig, basePath) => {
+  try {
+    // Check Docker availability first
+    const dockerAvailable = await dockerManager.checkDockerAvailable();
+    if (!dockerAvailable) {
+      return {
+        success: false,
+        error: 'Docker no está disponible. Asegúrate de que Docker está instalado y ejecutándose.'
+      };
+    }
+
+    // Notify renderer about pull progress
+    const onProgress = (event) => {
+      if (mainWindow && !mainWindow.isDestroyed()) {
+        mainWindow.webContents.send('docker-pull-progress', event);
+      }
+    };
+
+    // Start the container
+    const containerInfo = await dockerManager.startContainer(dockerConfig, basePath, onProgress);
+
+    // Get terminal dimensions
+    const dims = await mainWindow.webContents.executeJavaScript(
+      'window.terminalComponent?.fitAddon?.proposeDimensions() || {cols: 80, rows: 24}'
+    );
+
+    // Create exec stream
+    const { stream } = await dockerManager.createExecStream(dims.cols, dims.rows);
+
+    // Kill existing PTY if any
+    if (ptyProcess) {
+      ptyProcess.kill();
+      ptyProcess = null;
+    }
+
+    // Set up Docker stream handlers
+    stream.on('data', (data) => {
+      const output = data.toString();
+      if (isTerminalDetached && terminalWindow && !terminalWindow.isDestroyed()) {
+        terminalWindow.webContents.send('terminal-data', output);
+      } else if (mainWindow && !mainWindow.isDestroyed()) {
+        mainWindow.webContents.send('terminal-data', output);
+      }
+      recorder.recordOutput(output);
+    });
+
+    stream.on('end', () => {
+      console.log('[Docker] Stream ended');
+      if (mainWindow && !mainWindow.isDestroyed()) {
+        mainWindow.webContents.send('docker-session-ended');
+      }
+    });
+
+    stream.on('error', (error) => {
+      console.error('[Docker] Stream error:', error.message);
+    });
+
+    isDockerSession = true;
+
+    return {
+      success: true,
+      containerId: containerInfo.containerId,
+      containerName: containerInfo.name,
+      reused: containerInfo.reused
+    };
+  } catch (error) {
+    console.error('[Docker] Error starting session:', error.message);
+    return { success: false, error: error.message };
+  }
+});
+
+ipcMain.handle('stop-docker-session', async () => {
+  try {
+    if (dockerManager.hasActiveSession()) {
+      await dockerManager.stopContainer();
+    }
+
+    isDockerSession = false;
+
+    // Recreate local PTY
+    createPty();
+
+    return { success: true };
+  } catch (error) {
+    console.error('[Docker] Error stopping session:', error.message);
+    return { success: false, error: error.message };
+  }
+});
+
+ipcMain.handle('get-docker-status', async () => {
+  try {
+    const status = await dockerManager.getContainerStatus();
+    const dockerAvailable = await dockerManager.checkDockerAvailable();
+    return {
+      success: true,
+      isDockerSession,
+      dockerAvailable,
+      container: status
+    };
+  } catch (error) {
+    return { success: false, error: error.message };
+  }
+});
+
+ipcMain.handle('check-docker-available', async () => {
+  try {
+    const available = await dockerManager.checkDockerAvailable();
+    return { success: true, available };
+  } catch (error) {
+    return { success: false, available: false, error: error.message };
+  }
+});
+
 // AI API handlers (to bypass CSP restrictions in renderer)
 ipcMain.handle('ai-generate-openai', async (event, config) => {
   try {
@@ -513,9 +679,13 @@ app.whenReady().then(() => {
   });
 });
 
-app.on('window-all-closed', () => {
+app.on('window-all-closed', async () => {
   if (ptyProcess) {
     ptyProcess.kill();
+  }
+  // Stop Docker container if active
+  if (dockerManager.hasActiveSession()) {
+    await dockerManager.stopContainer();
   }
   if (process.platform !== 'darwin') {
     app.quit();

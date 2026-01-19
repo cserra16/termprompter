@@ -516,3 +516,88 @@ input[type="number"].form-control::-webkit-outer-spin-button {
   animation: spin 0.6s linear infinite;
   margin-right: 8px;
 }
+
+/* ===== Docker Indicator ===== */
+.docker-indicator {
+  display: none;
+  align-items: center;
+  gap: var(--spacing-sm);
+  padding: var(--spacing-xs) var(--spacing-md);
+  background: linear-gradient(135deg, #0db7ed 0%, #384d54 100%);
+  color: white;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.docker-indicator.active {
+  display: flex;
+}
+
+.docker-icon {
+  font-size: 16px;
+}
+
+.docker-info {
+  flex: 1;
+  font-family: var(--font-mono);
+  font-size: 11px;
+}
+
+.docker-stop-btn {
+  background: rgba(255, 255, 255, 0.2);
+  border: none;
+  color: white;
+  width: 20px;
+  height: 20px;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  font-size: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all var(--transition-fast);
+}
+
+.docker-stop-btn:hover {
+  background: var(--accent-danger);
+}
+
+/* ===== Docker Status Toast ===== */
+.docker-status {
+  position: fixed;
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%) translateY(100px);
+  background: var(--bg-secondary);
+  color: var(--text-primary);
+  padding: var(--spacing-sm) var(--spacing-lg);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-lg);
+  font-size: 13px;
+  z-index: 9999;
+  opacity: 0;
+  transition: all var(--transition-normal);
+  border: 1px solid #0db7ed;
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+}
+
+.docker-status::before {
+  content: '🐳';
+  font-size: 16px;
+}
+
+.docker-status.visible {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+}
+
+.docker-status.error {
+  border-color: var(--accent-danger);
+  background: linear-gradient(135deg, var(--bg-secondary) 0%, rgba(233, 69, 96, 0.1) 100%);
+}
+
+.docker-status.error::before {
+  content: '⚠️';
+}

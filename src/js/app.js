@@ -15,6 +15,10 @@ class TermPrompterApp {
         this.currentFilePath = null;
         this.undoStack = [];
 
+        // Docker session state
+        this.isDockerSession = false;
+        this.currentDockerConfig = null;
+
         this.init();
     }
 
@@ -28,6 +32,7 @@ class TermPrompterApp {
         this.recorder.init();
         this.setupEventListeners();
         this.setupKeyboardNavigation();
+        this.setupDockerListeners();
         this.connectComponents();
         this.loadDefaultDemo();
     }
@@ -214,7 +219,7 @@ class TermPrompterApp {
         const result = await window.electronAPI.loadDemo();
 
         if (result.success) {
-            this.processDemo(result.content, result.filePath);
+            await this.processDemo(result.content, result.filePath, result.dockerConfig);
         } else {
             // No default demo, show empty state
             this.sidebar.render([]);
@@ -229,7 +234,7 @@ class TermPrompterApp {
         const result = await window.electronAPI.openDemoDialog();
 
         if (result.success) {
-            this.processDemo(result.content, result.filePath);
+            await this.processDemo(result.content, result.filePath, result.dockerConfig);
         }
     }
 
@@ -237,8 +242,9 @@ class TermPrompterApp {
      * Process and render loaded demo content
      * @param {string} content - Markdown content
      * @param {string} filePath - Path to the file
+     * @param {object|null} dockerConfig - Docker configuration from frontmatter
      */
-    processDemo(content, filePath) {
+    async processDemo(content, filePath, dockerConfig = null) {
         const parsed = MarkdownParser.parse(content);
 
         if (!MarkdownParser.isValid(parsed)) {
@@ -247,13 +253,27 @@ class TermPrompterApp {
             return;
         }
 
+        // Stop any existing Docker session before loading new demo
+        if (this.isDockerSession) {
+            await this.stopDockerSession();
+        }
+
         this.currentDemo = parsed;
         this.currentFilePath = filePath;
+        this.currentDockerConfig = dockerConfig;
         this.demoTitle.textContent = parsed.title || this.getFileNameFromPath(filePath);
 
         // Render components
         this.sidebar.render(parsed.steps);
         this.timeline.render(parsed.steps.length);
+
+        // Update Docker indicator in UI
+        this.updateDockerIndicator(dockerConfig);
+
+        // Start Docker session if configuration is present
+        if (dockerConfig) {
+            await this.startDockerSession(dockerConfig, filePath);
+        }
     }
 
     /**
@@ -436,6 +456,143 @@ class TermPrompterApp {
             setTimeout(() => {
                 this.sidebar.nextStep();
             }, 300);
+        }
+    }
+
+    /**
+     * Setup Docker-related event listeners
+     */
+    setupDockerListeners() {
+        // Listen for Docker pull progress
+        window.electronAPI.onDockerPullProgress((progress) => {
+            if (progress.status) {
+                this.showDockerStatus(`Descargando imagen: ${progress.status}`);
+            }
+        });
+
+        // Listen for Docker session ending
+        window.electronAPI.onDockerSessionEnded(() => {
+            this.isDockerSession = false;
+            this.updateDockerIndicator(null);
+            this.showDockerStatus('Sesión Docker terminada');
+        });
+    }
+
+    /**
+     * Start a Docker session for the demo
+     * @param {object} dockerConfig - Docker configuration
+     * @param {string} filePath - Path to the demo file (for resolving relative volumes)
+     */
+    async startDockerSession(dockerConfig, filePath) {
+        // Get the directory containing the demo file for resolving relative paths
+        const basePath = filePath.substring(0, filePath.lastIndexOf('/'));
+
+        this.showDockerStatus(`Iniciando contenedor Docker (${dockerConfig.image})...`);
+
+        const result = await window.electronAPI.startDockerSession(dockerConfig, basePath);
+
+        if (result.success) {
+            this.isDockerSession = true;
+            const status = result.reused
+                ? `Contenedor reutilizado: ${result.containerName}`
+                : `Contenedor iniciado: ${result.containerName}`;
+            this.showDockerStatus(status);
+
+            // Clear status after 3 seconds
+            setTimeout(() => this.hideDockerStatus(), 3000);
+        } else {
+            this.showDockerStatus(`Error Docker: ${result.error}`, true);
+            this.currentDockerConfig = null;
+            this.updateDockerIndicator(null);
+        }
+    }
+
+    /**
+     * Stop the current Docker session
+     */
+    async stopDockerSession() {
+        if (!this.isDockerSession) return;
+
+        this.showDockerStatus('Deteniendo contenedor Docker...');
+
+        const result = await window.electronAPI.stopDockerSession();
+
+        if (result.success) {
+            this.isDockerSession = false;
+            this.currentDockerConfig = null;
+            this.hideDockerStatus();
+        } else {
+            this.showDockerStatus(`Error al detener: ${result.error}`, true);
+        }
+    }
+
+    /**
+     * Update the Docker indicator in the UI
+     * @param {object|null} dockerConfig - Docker configuration or null
+     */
+    updateDockerIndicator(dockerConfig) {
+        let indicator = document.getElementById('dockerIndicator');
+
+        if (dockerConfig) {
+            if (!indicator) {
+                // Create the indicator if it doesn't exist
+                indicator = document.createElement('div');
+                indicator.id = 'dockerIndicator';
+                indicator.className = 'docker-indicator';
+                indicator.innerHTML = `
+                    <span class="docker-icon">🐳</span>
+                    <span class="docker-info"></span>
+                    <button class="docker-stop-btn" title="Detener contenedor">✕</button>
+                `;
+
+                // Add click handler for stop button
+                indicator.querySelector('.docker-stop-btn').addEventListener('click', async (e) => {
+                    e.stopPropagation();
+                    await this.stopDockerSession();
+                    this.updateDockerIndicator(null);
+                });
+
+                // Insert after the title bar
+                const titleBar = document.querySelector('.title-bar');
+                if (titleBar) {
+                    titleBar.after(indicator);
+                }
+            }
+
+            indicator.querySelector('.docker-info').textContent = dockerConfig.image;
+            indicator.classList.add('active');
+        } else if (indicator) {
+            indicator.classList.remove('active');
+        }
+    }
+
+    /**
+     * Show Docker status message
+     * @param {string} message - Status message
+     * @param {boolean} isError - Whether this is an error message
+     */
+    showDockerStatus(message, isError = false) {
+        let statusEl = document.getElementById('dockerStatus');
+
+        if (!statusEl) {
+            statusEl = document.createElement('div');
+            statusEl.id = 'dockerStatus';
+            statusEl.className = 'docker-status';
+            document.body.appendChild(statusEl);
+        }
+
+        statusEl.textContent = message;
+        statusEl.classList.toggle('error', isError);
+        statusEl.classList.add('visible');
+    }
+
+    /**
+     * Hide Docker status message
+     */
+    hideDockerStatus() {
+        const statusEl = document.getElementById('dockerStatus');
+        if (statusEl) {
+            statusEl.classList.remove('visible');
         }
     }
 }
