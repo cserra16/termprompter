@@ -57,6 +57,16 @@
     color: var(--text-primary);
 }
 
+.terminal-btn.active {
+    background: rgba(0, 217, 165, 0.15);
+    color: var(--accent-primary);
+}
+
+.terminal-btn.active:hover {
+    background: rgba(0, 217, 165, 0.25);
+    color: var(--accent-primary);
+}
+
 .terminal-container {
     flex: 1;
     background: #000000;

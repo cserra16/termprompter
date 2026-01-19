@@ -9,6 +9,7 @@ class TermPrompterApp {
         this.timeline = new Timeline('#timelineContainer');
         this.terminal = new TerminalComponent('#terminalContainer');
         this.recorder = new RecorderUI();
+        this.keystrokeDisplay = new KeystrokeDisplay();
         this.demoTitle = document.getElementById('demoTitle');
         this.currentDemo = null;
         this.editMode = false;
@@ -77,6 +78,57 @@ class TermPrompterApp {
             decreaseFontBtn.addEventListener('click', () => {
                 this.terminal.decreaseFontSize();
             });
+        }
+
+        // Keystroke display controls
+        const toggleKeystrokeBtn = document.getElementById('toggleKeystrokeBtn');
+        const keystrokeModeBtn = document.getElementById('keystrokeModeBtn');
+
+        if (toggleKeystrokeBtn) {
+            toggleKeystrokeBtn.addEventListener('click', () => {
+                const isEnabled = this.keystrokeDisplay.toggle();
+
+                // Toggle button active state
+                if (isEnabled) {
+                    toggleKeystrokeBtn.classList.add('active');
+                    if (keystrokeModeBtn) keystrokeModeBtn.style.display = 'inline-block';
+                    this.showKeystrokeModeNotification();
+                } else {
+                    toggleKeystrokeBtn.classList.remove('active');
+                    if (keystrokeModeBtn) keystrokeModeBtn.style.display = 'none';
+                }
+            });
+
+            // Set initial state
+            if (this.keystrokeDisplay.isDisplayEnabled()) {
+                toggleKeystrokeBtn.classList.add('active');
+                if (keystrokeModeBtn) keystrokeModeBtn.style.display = 'inline-block';
+            }
+        }
+
+        if (keystrokeModeBtn) {
+            keystrokeModeBtn.addEventListener('click', () => {
+                // Toggle between modes
+                const currentMode = this.keystrokeDisplay.getFilterMode();
+                const newMode = currentMode === 'all' ? 'nonPrintable' : 'all';
+                this.keystrokeDisplay.setFilterMode(newMode);
+                this.showKeystrokeModeNotification();
+            });
+        }
+    }
+
+    /**
+     * Show notification about current keystroke mode
+     */
+    showKeystrokeModeNotification() {
+        const mode = this.keystrokeDisplay.getFilterMode();
+        const modeText = mode === 'all'
+            ? 'Mostrando todas las teclas'
+            : 'Mostrando solo combinaciones especiales';
+
+        // Use recorder's notification system if available
+        if (this.recorder && this.recorder.showNotification) {
+            this.recorder.showNotification(modeText, 'info');
         }
     }
 
