@@ -6,9 +6,13 @@ Herramienta didáctica en Electron para realizar demostraciones interactivas usa
 
 ## 🎬 Demo
 
-<video src="https://github.com/cserra16/termprompter/raw/main/img/termprompter-demo.mp4" controls width="100%">
-  Tu navegador no soporta la etiqueta de vídeo. <a href="img/termprompter-demo.mp4">Descargar vídeo</a>
-</video>
+<p align="center">
+  <a href="https://youtu.be/bXuHYlT7Su4">
+    <img src="https://img.youtube.com/vi/bXuHYlT7Su4/maxresdefault.jpg" alt="Ver demo en YouTube" width="600">
+  </a>
+</p>
+
+▶️ [Ver demo en YouTube](https://youtu.be/bXuHYlT7Su4)
 
 
 ## Descripción
