@@ -5,7 +5,7 @@
 Herramienta didáctica en Electron para realizar demostraciones interactivas usando la terminal.
 
 <p align="center">
-  <img src="img/logo.png" alt="screenshot">
+  <img src="img/TermPrompter-capture.png.png" alt="screenshot">
 </p>
 
 ## Descripción
