@@ -28,6 +28,22 @@ contextBridge.exposeInMainWorld('electronAPI', {
         ipcRenderer.removeAllListeners('terminal-data');
     },
 
+    // Terminal detach/attach API
+    detachTerminal: () => ipcRenderer.invoke('detach-terminal'),
+    attachTerminal: () => ipcRenderer.invoke('attach-terminal'),
+    onTerminalDetached: (callback) => {
+        ipcRenderer.on('terminal-detached', () => callback());
+    },
+    onTerminalAttached: (callback) => {
+        ipcRenderer.on('terminal-attached', () => callback());
+    },
+
+    // Command execution notification (for auto-advance with detached terminal)
+    notifyCommandExecuted: (command) => ipcRenderer.send('command-executed', command),
+    onCommandExecuted: (callback) => {
+        ipcRenderer.on('command-executed', (event, command) => callback(command));
+    },
+
     // Recording API
     startRecording: (options) => ipcRenderer.invoke('start-recording', options),
     stopRecording: () => ipcRenderer.invoke('stop-recording'),

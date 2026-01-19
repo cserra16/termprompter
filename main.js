@@ -6,13 +6,16 @@ const pty = require('node-pty');
 const TerminalRecorder = require('./recorder');
 
 let mainWindow;
+let terminalWindow = null;
+let isTerminalDetached = false;
 let ptyProcess = null;
 let recorder = new TerminalRecorder();
 
 // Determine shell based on platform
 function getShell() {
   if (process.platform === 'win32') {
-    return process.env.COMSPEC || 'cmd.exe';
+    // Use PowerShell on Windows for better integration
+    return 'powershell.exe';
   }
   return process.env.SHELL || '/bin/bash';
 }
@@ -68,7 +71,10 @@ function createPty() {
   // Determine shell arguments for minimal prompt
   let shellArgs = [];
 
-  if (shell.includes('zsh')) {
+  if (shell.includes('powershell')) {
+    // For PowerShell: use -NoLogo and -NoProfile for faster startup
+    shellArgs = ['-NoLogo', '-NoProfile', '-ExecutionPolicy', 'Bypass'];
+  } else if (shell.includes('zsh')) {
     // For zsh: start interactive shell, then set prompt
     shellArgs = ['-i'];
   } else if (shell.includes('bash')) {
@@ -108,9 +114,20 @@ function createPty() {
     }, 100);
   }
 
-  // Forward PTY output to renderer
+  // For PowerShell, set a minimal prompt
+  if (shell.includes('powershell')) {
+    setTimeout(() => {
+      if (ptyProcess) {
+        ptyProcess.write('function prompt { "PS> " }; cls\n');
+      }
+    }, 200);
+  }
+
+  // Forward PTY output to the appropriate window
   ptyProcess.onData((data) => {
-    if (mainWindow && !mainWindow.isDestroyed()) {
+    if (isTerminalDetached && terminalWindow && !terminalWindow.isDestroyed()) {
+      terminalWindow.webContents.send('terminal-data', data);
+    } else if (mainWindow && !mainWindow.isDestroyed()) {
       mainWindow.webContents.send('terminal-data', data);
     }
 
@@ -224,6 +241,89 @@ ipcMain.on('terminal-write-command', (event, command) => {
   if (ptyProcess) {
     // Write command to terminal (user can press Enter to execute)
     ptyProcess.write(command);
+  }
+});
+
+// Forward command execution from detached terminal to main window (for auto-advance)
+ipcMain.on('command-executed', (event, command) => {
+  if (mainWindow && !mainWindow.isDestroyed()) {
+    mainWindow.webContents.send('command-executed', command);
+  }
+});
+
+// Detach terminal to separate window
+ipcMain.handle('detach-terminal', async () => {
+  if (isTerminalDetached) {
+    return { success: false, error: 'Terminal already detached' };
+  }
+
+  try {
+    const { screen } = require('electron');
+    const primaryDisplay = screen.getPrimaryDisplay();
+    const { width, height } = primaryDisplay.workAreaSize;
+
+    terminalWindow = new BrowserWindow({
+      width: Math.floor(width * 0.5),
+      height: Math.floor(height * 0.6),
+      x: Math.floor(width * 0.25),
+      y: Math.floor(height * 0.2),
+      frame: false,
+      transparent: false,
+      backgroundColor: '#1a1a2e',
+      resizable: true,
+      alwaysOnTop: false,
+      webPreferences: {
+        preload: path.join(__dirname, 'preload.js'),
+        contextIsolation: true,
+        nodeIntegration: false
+      }
+    });
+
+    terminalWindow.loadFile(path.join(__dirname, 'src', 'terminal-window.html'));
+
+    terminalWindow.on('closed', () => {
+      terminalWindow = null;
+      isTerminalDetached = false;
+      // Notify main window that terminal was attached (closed)
+      if (mainWindow && !mainWindow.isDestroyed()) {
+        mainWindow.webContents.send('terminal-attached');
+      }
+    });
+
+    isTerminalDetached = true;
+
+    // Notify main window
+    if (mainWindow && !mainWindow.isDestroyed()) {
+      mainWindow.webContents.send('terminal-detached');
+    }
+
+    return { success: true };
+  } catch (error) {
+    return { success: false, error: error.message };
+  }
+});
+
+// Attach terminal back to main window
+ipcMain.handle('attach-terminal', async () => {
+  if (!isTerminalDetached) {
+    return { success: false, error: 'Terminal not detached' };
+  }
+
+  try {
+    if (terminalWindow && !terminalWindow.isDestroyed()) {
+      terminalWindow.close();
+    }
+    terminalWindow = null;
+    isTerminalDetached = false;
+
+    // Notify main window
+    if (mainWindow && !mainWindow.isDestroyed()) {
+      mainWindow.webContents.send('terminal-attached');
+    }
+
+    return { success: true };
+  } catch (error) {
+    return { success: false, error: error.message };
   }
 });
 

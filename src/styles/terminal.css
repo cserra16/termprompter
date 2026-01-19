@@ -149,3 +149,27 @@
     width: 14px;
     height: 14px;
 }
+
+/* ===== Detached Terminal State ===== */
+.right-panel.terminal-detached .terminal-container {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--bg-darker);
+}
+
+.right-panel.terminal-detached .terminal-container::after {
+    content: 'Terminal separada en ventana externa';
+    color: var(--text-muted);
+    font-size: 14px;
+    text-align: center;
+}
+
+.right-panel.terminal-detached .terminal-container .xterm {
+    display: none;
+}
+
+#detachTerminalBtn,
+#attachTerminalBtn {
+    display: flex;
+}

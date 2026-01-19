@@ -78,6 +78,54 @@ class TermPrompterApp {
                 this.terminal.decreaseFontSize();
             });
         }
+
+        // Detach/Attach terminal buttons
+        const detachBtn = document.getElementById('detachTerminalBtn');
+        const attachBtn = document.getElementById('attachTerminalBtn');
+
+        if (detachBtn) {
+            detachBtn.addEventListener('click', async () => {
+                const result = await window.electronAPI.detachTerminal();
+                if (result.success) {
+                    detachBtn.style.display = 'none';
+                    attachBtn.style.display = 'flex';
+                    document.querySelector('.right-panel').classList.add('terminal-detached');
+                }
+            });
+        }
+
+        if (attachBtn) {
+            attachBtn.addEventListener('click', async () => {
+                const result = await window.electronAPI.attachTerminal();
+                if (result.success) {
+                    attachBtn.style.display = 'none';
+                    detachBtn.style.display = 'flex';
+                    document.querySelector('.right-panel').classList.remove('terminal-detached');
+                }
+            });
+        }
+
+        // Listen for terminal attach/detach events (from main process)
+        window.electronAPI.onTerminalDetached(() => {
+            if (detachBtn) detachBtn.style.display = 'none';
+            if (attachBtn) attachBtn.style.display = 'flex';
+            document.querySelector('.right-panel').classList.add('terminal-detached');
+        });
+
+        window.electronAPI.onTerminalAttached(() => {
+            if (attachBtn) attachBtn.style.display = 'none';
+            if (detachBtn) detachBtn.style.display = 'flex';
+            document.querySelector('.right-panel').classList.remove('terminal-detached');
+            // Re-initialize terminal display
+            this.terminal.fit();
+        });
+
+        // Listen for command execution from detached terminal (for auto-advance)
+        window.electronAPI.onCommandExecuted((command) => {
+            if (this.isAutoTrackEnabled()) {
+                this.handleCommandTracking(command);
+            }
+        });
     }
 
     /**
