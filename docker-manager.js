@@ -130,7 +130,7 @@ class DockerManager {
             AttachStdin: true,
             AttachStdout: true,
             AttachStderr: true,
-            Cmd: config.cmd || ['/bin/bash'],
+            Cmd: config.shell || config.cmd || ['/bin/sh'],
             WorkingDir: config.workdir || '/root',
             Env: this.parseEnvironment(config.env),
             HostConfig: {
