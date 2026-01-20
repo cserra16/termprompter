@@ -3,7 +3,7 @@ docker:
   image: nginx:alpine
   name: demo-nginx-server
   ports:
-    - "8080:80"
+    - "9080:80"
   workdir: /usr/share/nginx/html
   shell:
     - /bin/sh

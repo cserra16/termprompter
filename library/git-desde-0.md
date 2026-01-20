@@ -1,1 +1,0 @@
-## Paso 2: Configurar tu identidad y rama por defecto
