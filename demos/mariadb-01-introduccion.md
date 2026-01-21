@@ -1,6 +1,6 @@
 ---
 docker:
-  image: mariadb:latest
+  image: mariadb:12.1
   name: demo-mariadb
   env:
     MARIADB_ROOT_PASSWORD: demo123
@@ -9,10 +9,9 @@ docker:
     - "3307:3306"
   workdir: /
   shell:
-    - mariadb
-    - -u
-    - root
-    - -pdemo123
+    - bash
+    - -c
+    - "echo 'Esperando a que MariaDB inicie...'; until mariadb -u root -pdemo123 -e 'SELECT 1' >/dev/null 2>&1; do sleep 1; done; mariadb -u root -pdemo123"
 ---
 
 # Curso MariaDB - Modulo 1: Introduccion a MariaDB
